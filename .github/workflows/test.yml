@@ -53,7 +53,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest pytest-cov
           pip install edge-tts pymupdf
-          # deep-translator optional — install for full test coverage
+          pip install fastapi httpx uvicorn python-multipart
           pip install deep-translator || true
 
       - name: Lint with flake8 (warnings only, won't fail build)
