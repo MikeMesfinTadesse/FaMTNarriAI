@@ -1,0 +1,44 @@
+# ═══════════════════════════════════════════════════════════════
+# NarraAI — Python Dependencies
+# Install: pip install -r requirements.txt
+#
+# PINNING STRATEGY:
+#   >= means "this version or newer" (flexible)
+#   ==  means "exactly this version" (locked, use in production)
+#   We use >= here for development flexibility.
+#   For production deployment, run: pip freeze > requirements.lock
+# ═══════════════════════════════════════════════════════════════
+
+# ── Core: TTS Engine ────────────────────────────────────────────
+# Microsoft Edge neural voices — 50+ languages, no API key needed
+edge-tts>=6.1.9
+
+# ── Core: PDF Processing ────────────────────────────────────────
+# PyMuPDF: fast PDF text extraction, chapter detection
+# Note: package name on PyPI is 'pymupdf' but imports as 'fitz'
+pymupdf>=1.23.0
+
+# ── Core: Desktop GUI ───────────────────────────────────────────
+# CustomTkinter: modern dark/light mode UI widgets
+# tkinter itself is built into Python — do NOT pip install it
+customtkinter>=5.2.2
+
+# ── Optional: Translation ────────────────────────────────────────
+# Enables the Translate button in Languages and Kids tabs
+# Uses Google Translate free — no API key required
+# deep-translator>=1.11.4
+
+# ── Step 2 (Roadmap): REST API ──────────────────────────────────
+# FastAPI: expose NarraAI as an HTTP API
+# fastapi>=0.100.0
+# uvicorn>=0.23.0
+
+# ── Step 4 (Roadmap): Analytics ─────────────────────────────────
+# pandas>=2.0.0
+# matplotlib>=3.7.0
+
+# ── Step 6 (Roadmap): Web Demo ──────────────────────────────────
+# gradio>=4.0.0
+
+# ── Development ─────────────────────────────────────────────────
+# pytest>=7.4.0
