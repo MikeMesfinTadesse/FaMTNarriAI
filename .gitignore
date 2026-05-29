@@ -1,0 +1,74 @@
+# ═══════════════════════════════════════════════════════════════
+# NarraAI .gitignore
+# Tells Git which files to NEVER upload to GitHub.
+# Rule: never commit secrets, generated files, or local settings.
+# ═══════════════════════════════════════════════════════════════
+
+# ── Python ──────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# ── Virtual environments ─────────────────────────────────────────
+# These are local to your machine — never commit them
+venv/
+env/
+.env/
+.venv/
+ENV/
+narraai-env/
+
+# ── Environment variables & secrets ─────────────────────────────
+# CRITICAL: API keys, passwords — NEVER commit these
+.env
+.env.local
+.env.production
+secrets.json
+config.local.py
+
+# ── Output audio files ───────────────────────────────────────────
+# Generated files don't belong in version control
+output/
+NarraAI_Output/
+*.mp3
+*.wav
+*.ogg
+*.m3u
+preview_*.mp3
+
+# ── IDE and editor files ─────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store           # macOS
+Thumbs.db           # Windows
+
+# ── Testing and coverage ─────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+
+# ── Distribution / packaging ─────────────────────────────────────
+dist/
+build/
+*.egg-info/
+*.egg
+
+# ── Logs ────────────────────────────────────────────────────────
+logs/
+*.log
+narraai_stats.csv   # analytics data — too large for git
+
+# ── Jupyter Notebooks (checkpoints) ─────────────────────────────
+.ipynb_checkpoints/
+
+# ── Docker ──────────────────────────────────────────────────────
+# Keep Dockerfile but ignore local docker volumes
+docker-data/

@@ -1,0 +1,45 @@
+# ═══════════════════════════════════════════════════════════════
+# NarraAI — Python Dependencies
+# Install: pip install -r requirements.txt
+#
+# PINNING STRATEGY:
+#   >= means "this version or newer" (flexible, good for dev)
+#   ==  means "exactly this version" (locked, use in production)
+#   For production: pip freeze > requirements.lock
+# ═══════════════════════════════════════════════════════════════
+
+# ── Core: TTS Engine ────────────────────────────────────────────
+edge-tts>=6.1.9
+
+# ── Core: PDF Processing ────────────────────────────────────────
+pymupdf>=1.23.0
+
+# ── Core: Desktop GUI ───────────────────────────────────────────
+customtkinter>=5.2.2
+
+# ── Optional: Translation ────────────────────────────────────────
+# deep-translator>=1.11.4
+
+# ── Phase 2: REST API ───────────────────────────────────────────
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+python-multipart>=0.0.6
+httpx>=0.24.0
+
+# ── Phase 3 (planned): Analytics ────────────────────────────────
+# pandas>=2.0.0
+# matplotlib>=3.7.0
+
+# ── Phase 4 (planned): Web Demo ─────────────────────────────────
+# gradio>=4.0.0
+
+# ── Development & Testing ────────────────────────────────────────
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-asyncio>=0.21.0
+
+# ── Phase 2 Addition: ElevenLabs Premium TTS (optional) ──────────────────────
+# Free tier: 10,000 chars/month. Creator+: voice cloning.
+# Get API key at: elevenlabs.io → Profile → API Key
+# elevenlabs>=1.0.0
+# requests>=2.31.0      # fallback if SDK not installed
