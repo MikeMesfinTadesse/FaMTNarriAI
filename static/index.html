@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FaMTNarriAI — Audiobook Studio</title>
+<style>
+:root{--bg:#0e0b16;--surface:#16131f;--surface2:#1e1a2e;--border:#2a2540;--accent:#c97af2;--accent2:#7af2d4;--text:#e2e0f0;--muted:#9d98b8;--ok:#2a6858;--ok2:#a0ffe8;--bad:#6a2020;--bad2:#ffaaaa;--blue:#7ab2f2;--purple:#7c3aed;--r:8px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;}
+/* Header */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:.75rem;height:56px;position:sticky;top:0;z-index:100;flex-shrink:0;}
+.logo{font-family:Georgia,serif;font-size:1.3rem;font-weight:700;color:var(--accent);}
+.logo span{color:var(--text);}
+.badge{background:var(--surface2);border:1px solid var(--accent);color:var(--accent);font-size:.6rem;padding:2px 7px;border-radius:20px;font-weight:700;letter-spacing:.5px;}
+.hdot{width:8px;height:8px;border-radius:50%;background:var(--muted);margin-left:auto;transition:background .3s;}
+.hdot.ok{background:#2ecc71;box-shadow:0 0 6px #2ecc71;}
+.hlbl{font-size:.75rem;color:var(--muted);}
+/* Layout */
+.wrap{display:flex;flex:1;min-height:0;}
+/* Sidebar */
+aside{width:230px;background:var(--surface);border-right:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto;}
+.sb-logo{padding:1.2rem 1rem .5rem;font-family:Georgia,serif;font-size:1.1rem;color:var(--accent);display:flex;align-items:center;gap:.5rem;}
+.sb-sub{padding:0 1rem .8rem;font-size:.75rem;color:var(--muted);}
+.sb-btn{margin:.3rem .8rem;padding:.5rem .9rem;background:var(--surface2);border:1px solid var(--accent);color:var(--accent);border-radius:6px;font-size:.82rem;cursor:pointer;text-align:left;width:calc(100% - 1.6rem);}
+.sb-btn:hover{background:#2a2540;}
+.sb-lbl{padding:.2rem 1rem .1rem;font-size:.68rem;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-top:.6rem;}
+.sb-info{padding:.15rem 1rem;font-size:.72rem;color:var(--muted);}
+.sb-div{height:1px;background:var(--border);margin:.7rem .8rem;}
+.sb-voice{padding:.3rem 1rem .15rem;}
+.sb-voice label{font-size:.7rem;color:var(--muted);letter-spacing:.5px;}
+select.sb-sel{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:.4rem .6rem;font-size:.78rem;margin-top:.25rem;outline:none;}
+select.sb-sel:focus{border-color:var(--accent);}
+.sb-speed{padding:.3rem 1rem .5rem;}
+.sb-speed label{font-size:.7rem;color:var(--muted);letter-spacing:.5px;display:flex;justify-content:space-between;}
+.sb-speed label span{color:var(--accent);font-weight:700;}
+input[type=range]{width:100%;accent-color:var(--accent);margin-top:.25rem;}
+.sb-theme{margin:.5rem .8rem 1rem;padding:.4rem;background:transparent;border:none;color:var(--muted);font-size:.78rem;cursor:pointer;text-align:left;}
+.sb-theme:hover{color:var(--text);}
+/* Main */
+main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+/* Tabs */
+.tabs{display:flex;gap:2px;padding:.6rem .8rem .3rem;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.tab-btn{padding:.38rem .85rem;border-radius:6px;border:none;cursor:pointer;font-size:.8rem;background:var(--surface2);color:var(--muted);transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{background:var(--accent);color:#fff;}
+/* Pages */
+.pages{flex:1;overflow-y:auto;padding:1.5rem;}
+.page{display:none;}
+.page.active{display:block;}
+.pg-title{font-family:Georgia,serif;font-size:1.15rem;color:var(--accent);margin-bottom:.25rem;}
+.pg-sub{font-size:.82rem;color:var(--muted);margin-bottom:1rem;}
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;margin-bottom:1rem;}
+/* Form */
+label{display:block;font-size:.75rem;color:var(--muted);margin-bottom:.3rem;font-weight:600;letter-spacing:.3px;}
+input[type=text],input[type=password],textarea,select{width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:.5rem .75rem;font-size:.85rem;font-family:inherit;outline:none;transition:border-color .15s;}
+input[type=text]:focus,input[type=password]:focus,textarea:focus,select:focus{border-color:var(--accent);}
+textarea{resize:vertical;min-height:130px;line-height:1.7;}
+.field{margin-bottom:.85rem;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:.35rem;padding:.45rem 1rem;border-radius:6px;font-size:.82rem;font-weight:600;border:none;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn-primary{background:var(--purple);color:#fff;}
+.btn-primary:hover{background:#9333ea;}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;}
+.btn-accent{background:transparent;border:1px solid var(--accent);color:var(--accent);}
+.btn-accent:hover{background:#2a2540;}
+.btn-teal{background:transparent;border:1px solid var(--accent2);color:var(--accent2);}
+.btn-teal:hover{background:#1a3830;}
+.btn-blue{background:transparent;border:1px solid var(--blue);color:var(--blue);}
+.btn-blue:hover{background:#1a2840;}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn-ghost:hover{color:var(--text);border-color:var(--text);}
+.btn-sm{padding:.3rem .7rem;font-size:.75rem;}
+.btn-row{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem;align-items:center;}
+/* Progress bar */
+.prog-wrap{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-left:.75rem;}
+.prog-bar{height:100%;background:var(--accent);border-radius:4px;width:0%;transition:width .3s;}
+/* Emotion tags */
+.etags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:.75rem;}
+.etag{display:inline-block;padding:3px 9px;border-radius:4px;font-size:.75rem;cursor:pointer;border:1px solid;transition:opacity .15s;}
+.etag:hover{opacity:.75;}
+/* Status */
+.status{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.75rem 1rem;font-size:.82rem;margin-top:.75rem;display:none;}
+.status.show{display:block;}
+.s-row{display:flex;align-items:center;gap:.5rem;}
+.spin{width:13px;height:13px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.s-ok{color:#2ecc71;} .s-err{color:#e74c3c;} .s-txt{color:var(--muted);}
+/* Audio */
+.aud-wrap{display:none;margin-top:.75rem;}
+.aud-wrap.show{display:block;}
+audio{width:100%;border-radius:6px;margin-bottom:.5rem;}
+.dl-row{display:flex;gap:.5rem;flex-wrap:wrap;}
+/* Drop zone */
+.drop{border:2px dashed var(--border);border-radius:var(--r);padding:2rem;text-align:center;cursor:pointer;transition:all .15s;color:var(--muted);}
+.drop:hover,.drop.drag{border-color:var(--accent);color:var(--text);background:rgba(201,122,242,.04);}
+.drop-icon{font-size:2.2rem;margin-bottom:.5rem;}
+.drop p{font-size:.875rem;}
+.drop small{font-size:.75rem;}
+/* Voice grid */
+.v-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:.4rem;max-height:380px;overflow-y:auto;}
+.v-card{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.5rem .75rem;cursor:pointer;transition:all .15s;font-size:.78rem;}
+.v-card:hover{border-color:var(--accent2);}
+.v-card.sel{border-color:var(--accent);background:rgba(201,122,242,.08);}
+.v-id{color:var(--muted);font-size:.68rem;margin-top:1px;font-family:monospace;}
+/* Lang sidebar */
+.lang-wrap{display:grid;grid-template-columns:175px 1fr;gap:1rem;}
+.lang-list{background:var(--surface2);border-radius:6px;padding:.5rem 0;max-height:420px;overflow-y:auto;}
+.lang-item{padding:.45rem .9rem;cursor:pointer;font-size:.82rem;color:var(--muted);transition:all .15s;border-left:3px solid transparent;}
+.lang-item:hover{color:var(--text);background:rgba(201,122,242,.06);}
+.lang-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(201,122,242,.08);}
+/* Story cards */
+.story-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem;margin-bottom:1rem;}
+.story-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:.85rem;cursor:pointer;transition:all .15s;}
+.story-card:hover{border-color:var(--accent);}
+.story-card.sel{border-color:var(--accent);background:rgba(201,122,242,.07);}
+.story-title{font-weight:700;font-size:.85rem;margin-bottom:.3rem;}
+.story-preview{font-size:.72rem;color:var(--muted);line-height:1.5;}
+/* EL sliders */
+.sl-row{display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem;}
+.sl-lbl{font-size:.78rem;color:var(--muted);min-width:70px;}
+.sl-val{font-size:.82rem;color:var(--accent);font-weight:700;min-width:32px;text-align:right;}
+/* Templates */
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.6rem;margin-bottom:1rem;}
+.tpl-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:.85rem;cursor:pointer;transition:all .15s;}
+.tpl-card:hover{border-color:var(--accent);}
+.tpl-name{font-weight:700;font-size:.85rem;color:var(--accent);margin-bottom:.4rem;}
+.tpl-preview{font-size:.72rem;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+/* Stats */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.75rem;margin-bottom:1rem;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.9rem;text-align:center;}
+.stat-val{font-size:1.6rem;font-weight:700;color:var(--accent);}
+.stat-lbl{font-size:.72rem;color:var(--muted);margin-top:.2rem;}
+/* Log */
+.log-box{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.75rem;height:320px;overflow-y:auto;font-size:.78rem;font-family:monospace;color:var(--muted);}
+.log-entry{margin-bottom:.3rem;} .log-entry span{color:var(--accent2);}
+/* Chapters */
+.ch-item{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.65rem .9rem;margin-bottom:.4rem;display:flex;align-items:center;gap:.6rem;}
+.ch-num{min-width:26px;height:26px;background:var(--purple);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.ch-title{flex:1;font-size:.82rem;}
+.ch-meta{font-size:.7rem;color:var(--muted);}
+.ch-approve{padding:.25rem .6rem;border-radius:4px;border:none;cursor:pointer;font-size:.72rem;font-weight:700;}
+.ch-ok{background:var(--ok);color:var(--ok2);}
+.ch-bad{background:var(--bad);color:var(--bad2);}
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+/* Mono code */
+code{font-family:monospace;background:var(--surface2);padding:1px 5px;border-radius:3px;font-size:.8em;color:var(--accent2);}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="logo">🎙 FaMTNarri<span>AI</span></span>
+  <span class="badge">AUDIOBOOK STUDIO</span>
+  <span style="margin-left:auto;display:flex;align-items:center;gap:.4rem;">
+    <span class="hdot" id="hdot"></span>
+    <span class="hlbl" id="hlbl">Connecting…</span>
+  </span>
+</header>
+
+<div class="wrap">
+<!-- ── SIDEBAR ── -->
+<aside>
+  <div class="sb-logo">🎙 NarraAI</div>
+  <div class="sb-sub">Audiobook Studio</div>
+  <button class="sb-btn" onclick="triggerFileUpload()">📄  Load PDF / TXT</button>
+  <div class="sb-info" id="sb-file">No file loaded</div>
+  <div class="sb-div"></div>
+  <div class="sb-voice">
+    <label>VOICE (Editor & Chapters)</label>
+    <select class="sb-sel" id="sb-voice" onchange="syncVoices()"></select>
+  </div>
+  <div class="sb-speed">
+    <label>SPEED <span id="sb-speed-val">1.0x</span></label>
+    <input type="range" id="sb-speed" min="0.5" max="2.0" step="0.1" value="1.0"
+      oninput="document.getElementById('sb-speed-val').textContent=parseFloat(this.value).toFixed(1)+'x'"/>
+  </div>
+  <div class="sb-div"></div>
+  <button class="sb-theme" onclick="toggleTheme()" id="theme-btn">☀ Light Mode</button>
+</aside>
+
+<!-- ── MAIN ── -->
+<main>
+<div class="tabs" id="tabs">
+  <button class="tab-btn active" onclick="showTab('editor',this)">✏ Editor</button>
+  <button class="tab-btn" onclick="showTab('chapters',this)">📑 Chapters</button>
+  <button class="tab-btn" onclick="showTab('pagerange',this)">📄 Page Range</button>
+  <button class="tab-btn" onclick="showTab('voicetester',this)">🎤 Voice Tester</button>
+  <button class="tab-btn" onclick="showTab('languages',this)">🌍 Languages</button>
+  <button class="tab-btn" onclick="showTab('kids',this)">🧒 Kids Section</button>
+  <button class="tab-btn" onclick="showTab('elevenlabs',this)">🎧 ElevenLabs</button>
+  <button class="tab-btn" onclick="showTab('templates',this)">⚡ Templates</button>
+  <button class="tab-btn" onclick="showTab('log',this)">📋 Log</button>
+</div>
+
+<div class="pages">
+
+<!-- ══ EDITOR ══ -->
+<div class="page active" id="page-editor">
+  <div class="pg-title">✏ Editor</div>
+  <div class="pg-sub">Type or paste text, add emotion tags, preview or convert to audio.</div>
+  <div class="card">
+    <div class="etags" id="editor-etags">
+      <span class="etag" style="color:#7ab2f2;border-color:#3a6080" onclick="insertTag('(whisper)')">(whisper)</span>
+      <span class="etag" style="color:#f2c87a;border-color:#806030" onclick="insertTag('(excited)')">(excited)</span>
+      <span class="etag" style="color:#7a9af2;border-color:#3a3880" onclick="insertTag('(sad)')">(sad)</span>
+      <span class="etag" style="color:#f27a7a;border-color:#803030" onclick="insertTag('(shout)')">(shout)</span>
+      <span class="etag" style="color:#c97af2;border-color:#6a3080" onclick="insertTag('(dramatic)')">(dramatic)</span>
+      <span class="etag" style="color:#7af2d4;border-color:#2a6858" onclick="insertTag('(gentle)')">(gentle)</span>
+      <span class="etag" style="color:#888;border-color:#444" onclick="insertTag('(pause)')">(pause)</span>
+      <span class="etag" style="color:#7af2d4;border-color:#2a6858" onclick="insertTag('(cheerful)')">(cheerful)</span>
+      <span class="etag" style="color:#888;border-color:#444" onclick="insertTag('(slow)')">(slow)</span>
+      <span class="etag" style="color:#f2c87a;border-color:#806030" onclick="insertTag('(fast)')">(fast)</span>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="cleanText()">🧹 Clean</button>
+    </div>
+    <div class="field">
+      <textarea id="editor-text" rows="8">(whisper) The old wizard raised his trembling hand toward the sky. (pause) "You dare challenge me?" (shout) His voice cracked the air like thunder.
+
+(excited) Lightning arced between his fingers. (sad) She had never seen him like this.</textarea>
+    </div>
+    <div class="field">
+      <label>Title</label>
+      <input type="text" id="editor-title" value="Chapter 1" style="max-width:280px"/>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-teal" onclick="editorPreview()">▶ Preview Voice</button>
+      <button class="btn btn-primary" id="btn-editor-convert" onclick="editorConvert()">🎙 Convert to Audio</button>
+      <div class="prog-wrap"><div class="prog-bar" id="editor-prog"></div></div>
+    </div>
+  </div>
+  <div class="aud-wrap" id="editor-preview-wrap"><audio id="editor-preview-audio" controls></audio></div>
+  <div class="status" id="editor-status">
+    <div class="s-row"><div class="spin" id="editor-spin"></div><span class="s-txt" id="editor-status-txt">Starting…</span></div>
+    <div class="aud-wrap" id="editor-audio-wrap"><audio id="editor-audio" controls></audio><div class="dl-row" id="editor-dl"></div></div>
+  </div>
+</div>
+
+<!-- ══ CHAPTERS ══ -->
+<div class="page" id="page-chapters">
+  <div class="pg-title">📑 Chapters</div>
+  <div class="pg-sub">Auto-detect chapters from your loaded PDF, approve or reject each one, then convert.</div>
+  <div class="card">
+    <div class="btn-row" style="margin-top:0;margin-bottom:.75rem;">
+      <button class="btn btn-accent" onclick="detectChapters()">🔍 Auto-detect</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--ok2);border-color:var(--ok)" onclick="approveAll()">✓ Approve All</button>
+      <button class="btn btn-ghost btn-sm" style="color:var(--bad2);border-color:var(--bad)" onclick="rejectAll()">✗ Reject All</button>
+      <span id="ch-summary" style="font-size:.78rem;color:var(--muted);margin-left:.5rem;"></span>
+    </div>
+    <div id="ch-list"><p style="color:var(--muted);font-size:.85rem;">Load a PDF first, then click Auto-detect.</p></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-ch-convert" onclick="chaptersConvert()">🎙 Convert Approved</button>
+      <div class="prog-wrap"><div class="prog-bar" id="ch-prog"></div></div>
+    </div>
+  </div>
+  <div class="status" id="ch-status">
+    <div class="s-row"><div class="spin"></div><span class="s-txt" id="ch-status-txt">Converting…</span></div>
+    <div class="dl-row" id="ch-dl" style="margin-top:.6rem;"></div>
+  </div>
+</div>
+
+<!-- ══ PAGE RANGE ══ -->
+<div class="page" id="page-pagerange">
+  <div class="pg-title">📄 Page Range</div>
+  <div class="pg-sub">Convert a specific page range from the loaded PDF as a single audio file.</div>
+  <div class="card">
+    <div class="row3" style="max-width:600px;margin-bottom:.85rem;">
+      <div class="field" style="margin:0">
+        <label>From page</label>
+        <input type="text" id="pr-from" placeholder="1"/>
+      </div>
+      <div class="field" style="margin:0">
+        <label>To page</label>
+        <input type="text" id="pr-to" placeholder="end"/>
+      </div>
+      <div class="field" style="margin:0">
+        <label>Title</label>
+        <input type="text" id="pr-title" value="Custom Chapter"/>
+      </div>
+    </div>
+    <div id="pr-info" style="font-size:.8rem;color:var(--muted);margin-bottom:.75rem;">Load a PDF first.</div>
+    <div class="btn-row" style="margin-top:0;">
+      <button class="btn btn-teal" onclick="prPreview()">👁 Preview Text</button>
+      <button class="btn btn-primary" onclick="prConvert()">🎙 Convert Range</button>
+    </div>
+  </div>
+  <div class="card" style="display:none;" id="pr-preview-card">
+    <label>Extracted text preview</label>
+    <textarea id="pr-preview-text" rows="6" readonly style="color:var(--muted);cursor:default;"></textarea>
+  </div>
+  <div class="status" id="pr-status">
+    <div class="s-row"><div class="spin"></div><span class="s-txt" id="pr-status-txt">Converting…</span></div>
+    <div class="aud-wrap" id="pr-audio-wrap"><audio id="pr-audio" controls></audio><div class="dl-row" id="pr-dl"></div></div>
+  </div>
+</div>
+
+<!-- ══ VOICE TESTER ══ -->
+<div class="page" id="page-voicetester">
+  <div class="pg-title">🎤 Voice Tester</div>
+  <div class="pg-sub">Type a sentence, then click Test on any voice to hear it immediately. Compare voices before converting.</div>
+  <div class="card">
+    <div class="field">
+      <label>Test sentence</label>
+      <input type="text" id="vt-text" value="Hello! I am your audiobook narrator. How do I sound?"/>
+    </div>
+    <div class="v-grid" id="vt-grid"></div>
+  </div>
+</div>
+
+<!-- ══ LANGUAGES ══ -->
+<div class="page" id="page-languages">
+  <div class="pg-title">🌍 Languages</div>
+  <div class="pg-sub">Convert text or upload a PDF/TXT in any supported language. Includes optional translation.</div>
+  <div class="lang-wrap">
+    <div class="lang-list" id="lang-list"></div>
+    <div>
+      <div class="card" style="margin-bottom:.75rem;">
+        <div class="row2" style="margin-bottom:.6rem;">
+          <div>
+            <label>Voice</label>
+            <select id="lang-voice"></select>
+          </div>
+          <div style="display:flex;align-items:flex-end;gap:.5rem;">
+            <button class="btn btn-teal btn-sm" onclick="langTestVoice()">▶ Test</button>
+            <button class="btn btn-accent btn-sm" onclick="langUpload()">📂 Upload File</button>
+          </div>
+        </div>
+        <div id="lang-file-info" style="font-size:.78rem;color:var(--muted);margin-bottom:.6rem;">No file uploaded — or type/paste below</div>
+        <div style="margin-bottom:.6rem;">
+          <button class="btn btn-blue btn-sm" onclick="langTranslate()">🌐 Translate Now</button>
+          <span style="font-size:.75rem;color:var(--muted);margin-left:.5rem;">Translate text into selected language before converting</span>
+        </div>
+        <div class="field" style="margin-bottom:.5rem;">
+          <textarea id="lang-text" rows="5" id="lang-text"></textarea>
+        </div>
+        <div style="display:flex;gap:.6rem;align-items:center;">
+          <input type="text" id="lang-title" value="My Chapter" style="max-width:200px"/>
+          <button class="btn btn-primary" onclick="langConvert()">🎙 Convert</button>
+          <div class="prog-wrap"><div class="prog-bar" id="lang-prog"></div></div>
+        </div>
+      </div>
+      <div class="status" id="lang-status">
+        <div class="s-row"><div class="spin"></div><span class="s-txt" id="lang-status-txt">Converting…</span></div>
+        <div class="aud-wrap" id="lang-audio-wrap"><audio id="lang-audio" controls></audio><div class="dl-row" id="lang-dl"></div></div>
+      </div>
+    </div>
+  </div>
+  <input type="file" id="lang-file-input" accept=".pdf,.txt" style="display:none" onchange="langFileSelected(this)"/>
+</div>
+
+<!-- ══ KIDS SECTION ══ -->
+<div class="page" id="page-kids">
+  <div class="pg-title">🧒 Kids Section</div>
+  <div class="pg-sub">📚 Kids Storyteller — Stories for children in any language. Pick a story or upload your own, choose language and voice, optionally translate, then convert.</div>
+  <div class="card">
+    <div class="story-grid" id="kids-stories"></div>
+    <div class="row2" style="margin-bottom:.75rem;">
+      <div>
+        <label>Language</label>
+        <select id="kids-lang" onchange="kidsLangChange()"></select>
+      </div>
+      <div>
+        <label>Voice</label>
+        <select id="kids-voice"></select>
+      </div>
+    </div>
+    <div style="display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap;">
+      <button class="btn btn-teal btn-sm" onclick="kidsTestVoice()">▶ Test Voice</button>
+      <button class="btn btn-accent btn-sm" onclick="kidsUpload()">📂 Upload Story</button>
+      <button class="btn btn-blue btn-sm" onclick="kidsTranslate()">🌐 Translate Story</button>
+      <span id="kids-file-info" style="font-size:.75rem;color:var(--muted);align-self:center;">Using built-in story</span>
+    </div>
+    <div class="field">
+      <textarea id="kids-text" rows="8"></textarea>
+    </div>
+    <div style="display:flex;gap:.6rem;align-items:center;">
+      <input type="text" id="kids-title" value="My Story" style="max-width:180px"/>
+      <button class="btn btn-primary" onclick="kidsConvert()">🎙 Convert Story</button>
+      <div class="prog-wrap"><div class="prog-bar" id="kids-prog"></div></div>
+    </div>
+  </div>
+  <div class="aud-wrap" id="kids-preview-wrap"><audio id="kids-preview-audio" controls></audio></div>
+  <div class="status" id="kids-status">
+    <div class="s-row"><div class="spin"></div><span class="s-txt" id="kids-status-txt">Converting…</span></div>
+    <div class="aud-wrap" id="kids-audio-wrap"><audio id="kids-audio" controls></audio><div class="dl-row" id="kids-dl"></div></div>
+  </div>
+  <input type="file" id="kids-file-input" accept=".pdf,.txt" style="display:none" onchange="kidsFileSelected(this)"/>
+</div>
+
+<!-- ══ ELEVENLABS ══ -->
+<div class="page" id="page-elevenlabs">
+  <div class="pg-title">🎧 ElevenLabs Voice Studio</div>
+  <div class="pg-sub">Premium AI voices with voice cloning. Requires an ElevenLabs API key (elevenlabs.io).</div>
+  <div class="card">
+    <div class="row2" style="margin-bottom:.75rem;align-items:flex-end;">
+      <div class="field" style="margin:0">
+        <label>API Key</label>
+        <input type="password" id="el-key" placeholder="Paste your ElevenLabs API key here  (Profile → API Key)"/>
+      </div>
+      <button class="btn btn-accent" onclick="elLoadVoices()">🔄 Load Voices</button>
+    </div>
+    <div class="row2" style="margin-bottom:.75rem;align-items:flex-end;">
+      <div class="field" style="margin:0">
+        <label>Voice</label>
+        <select id="el-voice"><option>— load voices first —</option></select>
+      </div>
+      <div class="field" style="margin:0">
+        <label>Model</label>
+        <select id="el-model">
+          <option value="eleven_multilingual_v2">eleven_multilingual_v2</option>
+          <option value="eleven_monolingual_v1">eleven_monolingual_v1</option>
+          <option value="eleven_turbo_v2">eleven_turbo_v2</option>
+          <option value="eleven_turbo_v2_5">eleven_turbo_v2_5</option>
+        </select>
+      </div>
+    </div>
+    <div class="sl-row">
+      <span class="sl-lbl">Stability</span>
+      <input type="range" id="el-stab" min="0" max="1" step="0.05" value="0.5" oninput="document.getElementById('el-stab-val').textContent=parseFloat(this.value).toFixed(2)" style="flex:1;accent-color:var(--accent)"/>
+      <span class="sl-val" id="el-stab-val">0.50</span>
+    </div>
+    <div class="sl-row">
+      <span class="sl-lbl">Similarity</span>
+      <input type="range" id="el-sim" min="0" max="1" step="0.05" value="0.75" oninput="document.getElementById('el-sim-val').textContent=parseFloat(this.value).toFixed(2)" style="flex:1;accent-color:var(--accent)"/>
+      <span class="sl-val" id="el-sim-val">0.75</span>
+    </div>
+    <div class="field">
+      <label>Text</label>
+      <textarea id="el-text" rows="5">Type or paste text here, or use 'Load from PDF/TXT' below.
+
+eleven_multilingual_v2 supports 29+ languages — just type in any language.</textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-teal" onclick="elPreview()">▶ Preview</button>
+      <button class="btn btn-primary" onclick="elConvert()">🎙 Convert</button>
+      <button class="btn btn-accent" onclick="elClone()">🎤 Clone a Voice</button>
+    </div>
+  </div>
+  <div class="aud-wrap" id="el-preview-wrap"><audio id="el-preview-audio" controls></audio></div>
+  <div class="status" id="el-status">
+    <div class="s-row"><div class="spin"></div><span class="s-txt" id="el-status-txt">Processing…</span></div>
+    <div class="aud-wrap" id="el-audio-wrap"><audio id="el-audio" controls></audio><div class="dl-row" id="el-dl"></div></div>
+  </div>
+</div>
+
+<!-- ══ TEMPLATES ══ -->
+<div class="page" id="page-templates">
+  <div class="pg-title">⚡ Templates</div>
+  <div class="pg-sub">Quick-load a preset sample into the Editor tab.</div>
+  <div class="tpl-grid" id="tpl-grid"></div>
+  <p style="font-size:.82rem;color:var(--muted);">Click any template to load it into the Editor tab.</p>
+</div>
+
+<!-- ══ LOG ══ -->
+<div class="page" id="page-log">
+  <div class="pg-title">📋 Log</div>
+  <div class="pg-sub">Activity log and server stats.</div>
+  <div class="stat-grid" id="stat-grid">
+    <div class="stat-card"><div class="stat-val" id="s-jobs">—</div><div class="stat-lbl">Total Jobs</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-done">—</div><div class="stat-lbl">Completed</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-running">—</div><div class="stat-lbl">Running</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-files">—</div><div class="stat-lbl">MP3 Files</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-voices">—</div><div class="stat-lbl">Voices</div></div>
+    <div class="stat-card"><div class="stat-val" id="s-uptime">—</div><div class="stat-lbl">Uptime (s)</div></div>
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;">
+      <span style="font-size:.8rem;font-weight:600;">Activity Log</span>
+      <button class="btn btn-ghost btn-sm" onclick="loadStats()">↻ Refresh</button>
+    </div>
+    <div class="log-box" id="log-box"></div>
+  </div>
+</div>
+
+</div><!-- /pages -->
+</main>
+</div>
+
+<input type="file" id="global-file-input" accept=".pdf,.txt" style="display:none" onchange="globalFileSelected(this)"/>
+
+<script>
+const API = '/api/v2';
+let allVoices = [];
+let chapters = [];
+let currentLang = null;
+let uploadedPdfBlob = null;
+let uploadedPdfName = '';
+let kidsUploadedBlob = null;
+let kidsUploadedName = '';
+let activeLang = null;
+
+// ── Data ────────────────────────────────────────────────────────────────────
+const MULTILANG_VOICES = {
+  "🇸🇦 Arabic":   [["ar-SA-ZariyahNeural","Zariyah — Saudi Arabia, F"],["ar-SA-HamedNeural","Hamed — Saudi Arabia, M"],["ar-EG-SalmaNeural","Salma — Egypt, F"],["ar-EG-ShakirNeural","Shakir — Egypt, M"],["ar-AE-FatimaNeural","Fatima — UAE, F"],["ar-AE-HamdanNeural","Hamdan — UAE, M"]],
+  "🇯🇵 Japanese": [["ja-JP-NanamiNeural","Nanami, F"],["ja-JP-KeitaNeural","Keita, M"]],
+  "🇨🇳 Chinese":  [["zh-CN-XiaoxiaoNeural","Xiaoxiao (CN), F"],["zh-CN-YunxiNeural","Yunxi (CN), M"],["zh-TW-HsiaoChenNeural","HsiaoChen (TW), F"]],
+  "🇫🇷 French":   [["fr-FR-DeniseNeural","Denise, F"],["fr-FR-HenriNeural","Henri, M"]],
+  "🇩🇪 German":   [["de-DE-KatjaNeural","Katja, F"],["de-DE-ConradNeural","Conrad, M"]],
+  "🇪🇸 Spanish":  [["es-ES-ElviraNeural","Elvira — Spain, F"],["es-MX-DaliaNeural","Dalia — Mexico, F"],["es-MX-JorgeNeural","Jorge — Mexico, M"]],
+  "🇷🇺 Russian":  [["ru-RU-SvetlanaNeural","Svetlana, F"],["ru-RU-DmitryNeural","Dmitry, M"]],
+  "🇰🇷 Korean":   [["ko-KR-SunHiNeural","Sun-Hi, F"],["ko-KR-InJoonNeural","InJoon, M"]],
+  "🇮🇳 Hindi":    [["hi-IN-SwaraNeural","Swara, F"],["hi-IN-MadhurNeural","Madhur, M"]],
+  "🇹🇷 Turkish":  [["tr-TR-EmelNeural","Emel, F"],["tr-TR-AhmetNeural","Ahmet, M"]],
+  "🇸🇰 Slovak":   [["sk-SK-ViktoriaNeural","Viktoria, F"],["sk-SK-LukasNeural","Lukas, M"]],
+  "🇰🇪 Swahili":  [["sw-KE-ZuriNeural","Zuri — Kenya, F"],["sw-KE-RafikiNeural","Rafiki — Kenya, M"],["sw-TZ-RehemaNeural","Rehema — Tanzania, F"],["sw-TZ-DaudiNeural","Daudi — Tanzania, M"]],
+  "🇪🇹 Amharic":  [["am-ET-MekdesNeural","Mekdes — Ethiopia, F"],["am-ET-AmehaNeural","Ameha — Ethiopia, M"]],
+  "🇵🇭 Filipino": [["fil-PH-BlessicaNeural","Blessica, F"],["fil-PH-AngeloNeural","Angelo, M"]],
+  "🇪🇷 Tigrinya": [["am-ET-MekdesNeural","Mekdes (Geʼez script, F)"],["am-ET-AmehaNeural","Ameha (Geʼez script, M)"]],
+};
+const LANG_SAMPLES = {
+  "🇸🇦 Arabic":"الصوتية للكتب نارا تطبيق في بكم مرحباً.\nالجودة عالي طبيعي صوت إلى نص أي تحويل الآن يمكنك.",
+  "🇯🇵 Japanese":"ナレーAIへようこそ。\n高品質な音声で、あらゆるテキストを読み上げます。",
+  "🇨🇳 Chinese":"欢迎使用NarraAI有声书工作室。\n我们支持多种语言的高质量语音合成。",
+  "🇫🇷 French":"Bienvenue dans NarraAI, votre studio d'audiolivres.\nConvertissez n'importe quel texte en audio naturel.",
+  "🇩🇪 German":"Willkommen bei NarraAI, Ihrem Hörbuch-Studio.\nWandeln Sie beliebigen Text in natürliche Sprache um.",
+  "🇪🇸 Spanish":"Bienvenido a NarraAI, tu estudio de audiolibros.\nConvierte cualquier texto en audio natural de alta calidad.",
+  "🇷🇺 Russian":"Добро пожаловать в NarraAI.\nПреобразуйте любой текст в естественный голос.",
+  "🇰🇷 Korean":"NarraAI 오디오북 스튜디오에 오신 것을 환영합니다.\n자연스러운 음성으로 텍스트를 변환하세요.",
+  "🇮🇳 Hindi":"NarraAI ऑडियोबुक स्टूडियो में आपका स्वागत है।\nकिसी भी पाठ को प्राकृतिक आवाज़ में बदलें।",
+  "🇹🇷 Turkish":"NarraAI sesli kitap stüdyosuna hoş geldiniz.\nHerhangi bir metni doğal sese dönüştürün.",
+  "🇸🇰 Slovak":"Vitajte v NarraAI, vašom štúdiu audiokníh.\nPremena akéhokoľvek textu na prirodzený hlas.",
+  "🇰🇪 Swahili":"Karibu kwenye NarraAI, studio yako ya vitabu vya sauti.\nTunaweza kubadilisha maandishi yoyote kuwa sauti ya hali ya juu.",
+  "🇪🇹 Amharic":"ወደ NarraAI እዘይ ተሰዘቡ.\nማንዛናንም ጸሐፊ ወደ ከፈተኛ ጥራት ድምፅ ድምፅ መቀየር ደንቁ።",
+  "🇵🇭 Filipino":"Maligayang pagdating sa NarraAI, ang iyong audiobook studio.\nMaaari mong i-convert ang anumang teksto sa natural na boses.",
+  "🇪🇷 Tigrinya":"ወደ NarraAI እዘይ ተሰዘቡ. ማንዛናንም ተኰኳይ ድምፅ እንደግሩ ይተርጉማሉ.",
+};
+const KIDS_STORIES = {
+  "The Brave Little Fox":"Once upon a time in a great green forest, there lived a little fox named Felix.\n\nFelix was small, but his heart was as big as the tallest oak tree.\n\nOne morning, Felix heard a tiny voice calling from the river. It was a baby duck, stuck between two rocks, unable to get free.\n\nWithout a moment of hesitation, Felix leaped into the shallow water, carefully nudged the rocks apart, and set the little duck free.\n\nThe duck looked up with big, grateful eyes. \"Thank you, brave fox!\"\n\nFelix smiled. \"That's what friends are for,\" he said.\n\nAnd from that day on, the fox and the duck were the very best of friends.",
+  "The Star That Fell":"High above the clouds, there was a little star named Lumi.\n\nEvery night, Lumi shone as brightly as she could, lighting the way for ships and dreamers below.\n\nBut one windy night, a great gust blew Lumi right out of the sky!\n\nShe tumbled and twirled and landed softly in a meadow full of fireflies.\n\n\"Where am I?\" asked Lumi.\n\n\"You're with us!\" said the fireflies. \"We've always wanted to meet a real star.\"\n\nTogether they danced and glowed until the sun rose and carried Lumi gently back to her place in the sky, her heart full of new friends and happy memories.",
+  "The Dragon Who Was Afraid of Fire":"In the land of Embervale lived a dragon named Pip.\n\nPip had shiny purple scales, enormous wings, and absolutely no fire whatsoever.\n\nEvery time Pip tried to breathe fire, he sneezed out bubbles instead.\n\nThe other dragons would laugh, and Pip would hide behind the waterfall.\n\nOne day, the village below Embervale needed light — their lanterns had all gone out.\n\nPip flew down and blew his biggest bubble breath. The bubbles floated into every window, each one glowing softly with rainbow light.\n\nThe villagers cheered. The children danced.\n\nFrom that day on, Pip was known as the most magical dragon in all the land. Not because of fire, but because of who he truly was.",
+};
+const TEMPLATES = {
+  "Fantasy":'(whisper) The old wizard raised his trembling hand toward the sky. (pause) "You dare challenge me?" (shout) His voice cracked the air like thunder.\n\n(excited) Lightning arced between his fingers. (sad) She had never seen him like this.',
+  "Horror":'(whisper) She heard it again — beneath the floorboards. (pause) Slow. Deliberate.\n\n(dramatic) The candle went out. (shout) "Who\'s there?!" Her voice echoed... and something answered.',
+  "Children":'(gentle) Once upon a time, in a forest where the trees hummed lullabies, there lived a small bear named Tobias.\n\n(excited) Every morning he raced to the meadow! "Good morning, world!" he called.',
+  "News":"Breaking: Global leaders convened today for an emergency summit. (pause) Scientists warn that tipping points could be reached within the decade. Negotiations, while tense, are showing signs of progress.",
+};
+const KIDS_VOICES_EN = [["en-US-AriaNeural","Aria (Expressive, F)"],["en-US-JennyNeural","Jenny (Casual, F)"],["en-US-MichelleNeural","Michelle (Friendly, F)"],["en-US-GuyNeural","Guy (Friendly, M)"],["en-US-RogerNeural","Roger (Lively, M)"],["en-GB-LibbyNeural","Libby (GB, F)"],["en-AU-NatashaNeural","Natasha (AU, F)"]];
+
+// ── Log ──────────────────────────────────────────────────────────────────────
+function log(msg){const b=document.getElementById('log-box');const t=new Date().toLocaleTimeString();b.innerHTML+=`<div class="log-entry"><span>[${t}]</span> ${msg}</div>`;b.scrollTop=b.scrollHeight;}
+
+// ── Tab nav ──────────────────────────────────────────────────────────────────
+function showTab(name,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='log') loadStats();
+}
+
+// ── Health ───────────────────────────────────────────────────────────────────
+async function checkHealth(){
+  try{const r=await fetch(`${API}/health`);const d=await r.json();
+    document.getElementById('hdot').className='hdot '+(d.status==='ok'?'ok':'');
+    document.getElementById('hlbl').textContent=d.status==='ok'?'Online':'Error';
+  }catch{document.getElementById('hlbl').textContent='Offline';}
+}
+
+// ── Load voices ──────────────────────────────────────────────────────────────
+async function loadAllVoices(){
+  try{
+    const r=await fetch(`${API}/voices`);allVoices=await r.json();
+    ['sb-voice'].forEach(id=>{
+      const s=document.getElementById(id);
+      s.innerHTML=allVoices.map(v=>`<option value="${v.id}" ${v.id==='en-US-AriaNeural'?'selected':''}>${v.label}</option>`).join('');
+    });
+    buildVoiceTesterGrid();
+    log(`${allVoices.length} voices loaded`);
+  }catch(e){log('Voice load failed: '+e.message);}
+}
+
+function syncVoices(){}
+
+// ── EDITOR ───────────────────────────────────────────────────────────────────
+function insertTag(tag){
+  const ta=document.getElementById('editor-text');
+  const p=ta.selectionStart,v=ta.value;
+  ta.value=v.slice(0,p)+tag+' '+v.slice(p);
+  ta.focus();ta.selectionStart=ta.selectionEnd=p+tag.length+1;
+}
+function cleanText(){
+  let t=document.getElementById('editor-text').value;
+  t=t.replace(/\s+/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+  document.getElementById('editor-text').value=t;
+  log('Text cleaned');
+}
+async function editorPreview(){
+  const text=document.getElementById('editor-text').value.trim()||'Hello, I am your narrator.';
+  const voice=document.getElementById('sb-voice').value;
+  const speed=parseFloat(document.getElementById('sb-speed').value);
+  try{
+    const r=await fetch(`${API}/preview`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:text.slice(0,300),voice,speed})});
+    const blob=await r.blob();
+    const audio=document.getElementById('editor-preview-audio');
+    audio.src=URL.createObjectURL(blob);
+    document.getElementById('editor-preview-wrap').classList.add('show');
+    audio.play(); log('Preview playing: '+voice);
+  }catch(e){log('Preview error: '+e.message);}
+}
+async function editorConvert(){
+  const text=document.getElementById('editor-text').value.trim();
+  if(!text){alert('Please enter text.');return;}
+  const voice=document.getElementById('sb-voice').value;
+  const speed=parseFloat(document.getElementById('sb-speed').value);
+  const title=document.getElementById('editor-title').value||'Chapter';
+  const btn=document.getElementById('btn-editor-convert');
+  btn.disabled=true;
+  const st=document.getElementById('editor-status');st.classList.add('show');
+  document.getElementById('editor-spin').style.display='block';
+  setStatus('editor','Starting conversion…','');
+  try{
+    const r=await fetch(`${API}/convert`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text,voice,speed,title})});
+    const job=await r.json();
+    log('Job started: '+job.job_id);
+    pollJob(job.job_id,'editor',()=>{btn.disabled=false;});
+  }catch(e){setStatus('editor','Error: '+e.message,'err');btn.disabled=false;}
+}
+
+// ── CHAPTERS ─────────────────────────────────────────────────────────────────
+async function detectChapters(){
+  if(!uploadedPdfBlob){alert('Load a PDF first using the sidebar button.');return;}
+  log('Detecting chapters from: '+uploadedPdfName);
+  // Upload the file and use metadata — for now simulate chapter detection via convert-pdf
+  document.getElementById('ch-summary').textContent='Uploading for analysis…';
+  const fd=new FormData();fd.append('file',uploadedPdfBlob);fd.append('voice',document.getElementById('sb-voice').value);fd.append('speed','1.0');
+  try{
+    const r=await fetch(`${API}/convert-pdf`,{method:'POST',body:fd});
+    const job=await r.json();
+    chapters=[{title:'Full Document',jobId:job.job_id,approved:true}];
+    renderChapters(); log('Analysis job: '+job.job_id);
+    document.getElementById('ch-summary').textContent='1 chapter detected';
+  }catch(e){log('Chapter detect error: '+e.message);}
+}
+function renderChapters(){
+  const list=document.getElementById('ch-list');
+  if(!chapters.length){list.innerHTML='<p style="color:var(--muted);font-size:.85rem;">No chapters detected.</p>';return;}
+  list.innerHTML=chapters.map((ch,i)=>`
+    <div class="ch-item" id="ch-${i}">
+      <div class="ch-num">${i+1}</div>
+      <div class="ch-title">${ch.title}</div>
+      <button class="ch-approve ${ch.approved?'ch-ok':'ch-bad'}" onclick="toggleChapter(${i})">${ch.approved?'✓ Approved':'✗ Rejected'}</button>
+    </div>`).join('');
+  document.getElementById('ch-summary').textContent=`${chapters.filter(c=>c.approved).length}/${chapters.length} approved`;
+}
+function toggleChapter(i){chapters[i].approved=!chapters[i].approved;renderChapters();}
+function approveAll(){chapters.forEach(c=>c.approved=true);renderChapters();}
+function rejectAll(){chapters.forEach(c=>c.approved=false);renderChapters();}
+async function chaptersConvert(){
+  const approved=chapters.filter(c=>c.approved);
+  if(!approved.length){alert('No chapters approved.');return;}
+  log('Converting '+approved.length+' chapters');
+  document.getElementById('ch-status').classList.add('show');
+  setStatus('ch','Polling job status…','');
+  if(approved[0].jobId){pollJob(approved[0].jobId,'ch',()=>{});}
+}
+
+// ── PAGE RANGE ────────────────────────────────────────────────────────────────
+function prPreview(){
+  document.getElementById('pr-preview-card').style.display='block';
+  document.getElementById('pr-preview-text').value='Page range preview requires a loaded PDF. The text extracted from pages '+
+    (document.getElementById('pr-from').value||'1')+' to '+(document.getElementById('pr-to').value||'end')+' will appear here.';
+  log('Page range preview requested');
+}
+async function prConvert(){
+  if(!uploadedPdfBlob){alert('Load a PDF first.');return;}
+  const voice=document.getElementById('sb-voice').value;
+  const title=document.getElementById('pr-title').value||'Custom Chapter';
+  document.getElementById('pr-status').classList.add('show');
+  setStatus('pr','Uploading file…','');
+  const fd=new FormData();fd.append('file',uploadedPdfBlob);fd.append('voice',voice);fd.append('speed','1.0');
+  try{
+    const r=await fetch(`${API}/convert-pdf`,{method:'POST',body:fd});
+    const job=await r.json();
+    log('Page range job: '+job.job_id);
+    pollJob(job.job_id,'pr',()=>{});
+  }catch(e){setStatus('pr','Error: '+e.message,'err');}
+}
+
+// ── VOICE TESTER ──────────────────────────────────────────────────────────────
+function buildVoiceTesterGrid(){
+  const grid=document.getElementById('vt-grid');
+  grid.innerHTML=allVoices.map(v=>`
+    <div class="v-card">
+      <div>${v.label}</div>
+      <div class="v-id">${v.id}</div>
+      <button class="btn btn-teal btn-sm" style="margin-top:.4rem;width:100%" onclick="vtTest('${v.id}',this)">▶ Test</button>
+    </div>`).join('');
+}
+async function vtTest(voiceId,btn){
+  const text=document.getElementById('vt-text').value.trim()||'Hello, how do I sound?';
+  const orig=btn.textContent;btn.textContent='…';btn.disabled=true;
+  try{
+    const r=await fetch(`${API}/preview`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:text.slice(0,200),voice:voiceId,speed:1.0})});
+    const blob=await r.blob();
+    const audio=new Audio(URL.createObjectURL(blob));audio.play();
+    log('Testing voice: '+voiceId);
+  }catch(e){log('Voice test error: '+e.message);}
+  btn.textContent=orig;btn.disabled=false;
+}
+
+// ── LANGUAGES ─────────────────────────────────────────────────────────────────
+function buildLangList(){
+  const list=document.getElementById('lang-list');
+  list.innerHTML=Object.keys(MULTILANG_VOICES).map(l=>`
+    <div class="lang-item" onclick="selectLang('${l}',this)">${l}</div>`).join('');
+  selectLang(Object.keys(MULTILANG_VOICES)[0],list.firstChild);
+}
+function selectLang(lang,el){
+  document.querySelectorAll('.lang-item').forEach(i=>i.classList.remove('active'));
+  if(el)el.classList.add('active');
+  activeLang=lang;
+  const voices=MULTILANG_VOICES[lang];
+  const sel=document.getElementById('lang-voice');
+  sel.innerHTML=voices.map(([id,lbl])=>`<option value="${id}">${lbl}</option>`).join('');
+  if(LANG_SAMPLES[lang]) document.getElementById('lang-text').value=LANG_SAMPLES[lang];
+  log('Language selected: '+lang);
+}
+async function langTestVoice(){
+  const text=document.getElementById('lang-text').value.slice(0,200)||'Hello!';
+  const voice=document.getElementById('lang-voice').value;
+  try{
+    const r=await fetch(`${API}/preview`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text,voice,speed:1.0})});
+    const blob=await r.blob();new Audio(URL.createObjectURL(blob)).play();
+    log('Language voice test: '+voice);
+  }catch(e){log('Error: '+e.message);}
+}
+function langUpload(){document.getElementById('lang-file-input').click();}
+function langFileSelected(input){
+  const f=input.files[0];if(!f)return;
+  document.getElementById('lang-file-info').textContent='📄 '+f.name;
+  log('Language file loaded: '+f.name);
+}
+async function langTranslate(){
+  const text=document.getElementById('lang-text').value.trim();
+  if(!text){alert('Enter text first.');return;}
+  const voice=document.getElementById('lang-voice').value;
+  try{
+    const r=await fetch(`${API}/preview`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text:text.slice(0,100),voice,speed:1.0})});
+    if(r.ok)log('Translation preview generated (full translation requires deep-translator on server)');
+  }catch(e){log('Translate error: '+e.message);}
+  log('Note: Install deep-translator on server for full translation support');
+}
+async function langConvert(){
+  const text=document.getElementById('lang-text').value.trim();
+  if(!text){alert('Enter text first.');return;}
+  const voice=document.getElementById('lang-voice').value;
+  const speed=parseFloat(document.getElementById('sb-speed').value);
+  const title=document.getElementById('lang-title').value||'My Chapter';
+  document.getElementById('lang-status').classList.add('show');
+  setStatus('lang','Converting…','');
+  try{
+    const r=await fetch(`${API}/convert`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text,voice,speed,title})});
+    const job=await r.json();
+    log('Language convert job: '+job.job_id);
+    pollJob(job.job_id,'lang',()=>{});
+  }catch(e){setStatus('lang','Error: '+e.message,'err');}
+}
+
+// ── KIDS ──────────────────────────────────────────────────────────────────────
+function buildKidsStories(){
+  const grid=document.getElementById('kids-stories');
+  grid.innerHTML=Object.entries(KIDS_STORIES).map(([title,text],i)=>`
+    <div class="story-card ${i===0?'sel':''}" onclick="kidsSelectStory('${title}',this)">
+      <div class="story-title">${title}</div>
+      <div class="story-preview">${text.slice(0,100)}…</div>
+    </div>`).join('');
+  document.getElementById('kids-text').value=Object.values(KIDS_STORIES)[0];
+  document.getElementById('kids-title').value=Object.keys(KIDS_STORIES)[0];
+}
+function kidsSelectStory(title,el){
+  document.querySelectorAll('.story-card').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('kids-text').value=KIDS_STORIES[title];
+  document.getElementById('kids-title').value=title;
+  document.getElementById('kids-file-info').textContent='Using built-in story';
+  kidsUploadedBlob=null;
+  log('Kids story selected: '+title);
+}
+function buildKidsLangSelect(){
+  const sel=document.getElementById('kids-lang');
+  sel.innerHTML='<option value="🇬🇧 English">🇬🇧 English</option>'+
+    Object.keys(MULTILANG_VOICES).map(l=>`<option value="${l}">${l}</option>`).join('');
+  kidsLangChange();
+}
+function kidsLangChange(){
+  const lang=document.getElementById('kids-lang').value;
+  const vsel=document.getElementById('kids-voice');
+  if(lang==='🇬🇧 English'){
+    vsel.innerHTML=KIDS_VOICES_EN.map(([id,lbl])=>`<option value="${id}">${lbl}</option>`).join('');
+  } else if(MULTILANG_VOICES[lang]){
+    vsel.innerHTML=MULTILANG_VOICES[lang].map(([id,lbl])=>`<option value="${id}">${lbl}</option>`).join('');
+  }
+}
+async function kidsTestVoice(){
+  const text=document.getElementById('kids-text').value.slice(0,150)||'Once upon a time…';
+  const voice=document.getElementById('kids-voice').value;
+  try{
+    const r=await fetch(`${API}/preview`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text,voice,speed:0.9})});
+    const blob=await r.blob();
+    const audio=document.getElementById('kids-preview-audio');
+    audio.src=URL.createObjectURL(blob);
+    document.getElementById('kids-preview-wrap').classList.add('show');
+    audio.play(); log('Kids voice test: '+voice);
+  }catch(e){log('Error: '+e.message);}
+}
+function kidsUpload(){document.getElementById('kids-file-input').click();}
+function kidsFileSelected(input){
+  const f=input.files[0];if(!f)return;
+  kidsUploadedBlob=f;kidsUploadedName=f.name;
+  document.getElementById('kids-file-info').textContent='📄 '+f.name;
+  log('Kids file loaded: '+f.name);
+}
+async function kidsTranslate(){log('Translation requires deep-translator on server. Showing voice preview instead.');kidsTestVoice();}
+async function kidsConvert(){
+  const text=document.getElementById('kids-text').value.trim();
+  if(!text){alert('No story text.');return;}
+  const voice=document.getElementById('kids-voice').value;
+  const title=document.getElementById('kids-title').value||'My Story';
+  document.getElementById('kids-status').classList.add('show');
+  setStatus('kids','Converting story…','');
+  try{
+    const r=await fetch(`${API}/convert`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text,voice,speed:0.9,title})});
+    const job=await r.json();
+    log('Kids convert job: '+job.job_id);
+    pollJob(job.job_id,'kids',()=>{});
+  }catch(e){setStatus('kids','Error: '+e.message,'err');}
+}
+
+// ── ELEVENLABS ────────────────────────────────────────────────────────────────
+async function elLoadVoices(){
+  const key=document.getElementById('el-key').value.trim();
+  if(!key){alert('Enter your ElevenLabs API key first.');return;}
+  log('Loading ElevenLabs voices…');
+  try{
+    const r=await fetch(`${API}/elevenlabs/voices`,{headers:{'X-EL-Key':key}});
+    const d=await r.json();
+    if(r.ok){
+      const voices=d.voices||[];
+      document.getElementById('el-voice').innerHTML=voices.map(v=>`<option value="${v.voice_id||v.id}">${v.name}</option>`).join('');
+      log(`${voices.length} ElevenLabs voices loaded`);
+    }else{log('EL error: '+(d.detail?.detail||d.detail||'unknown'));}
+  }catch(e){log('EL load error: '+e.message);}
+}
+async function elPreview(){
+  const key=document.getElementById('el-key').value.trim();
+  if(!key){alert('Enter API key and load voices first.');return;}
+  const text=document.getElementById('el-text').value.trim().slice(0,300);
+  const voice_id=document.getElementById('el-voice').value;
+  const model_id=document.getElementById('el-model').value;
+  const stability=parseFloat(document.getElementById('el-stab').value);
+  const similarity_boost=parseFloat(document.getElementById('el-sim').value);
+  if(!voice_id||voice_id==='— load voices first —'){alert('Load voices first.');return;}
+  try{
+    const r=await fetch(`${API}/elevenlabs/preview`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text,voice_id,voice_name:'ElevenLabs',model_id,stability,similarity_boost,title:'Preview',speed:1.0})});
+    if(r.ok){const blob=await r.blob();const audio=document.getElementById('el-preview-audio');audio.src=URL.createObjectURL(blob);document.getElementById('el-preview-wrap').classList.add('show');audio.play();log('EL preview playing');}
+    else{const d=await r.json();log('EL preview error: '+(d.detail?.detail||d.detail||'unknown'));}
+  }catch(e){log('EL preview error: '+e.message);}
+}
+async function elConvert(){
+  const key=document.getElementById('el-key').value.trim();
+  if(!key){alert('Enter API key first.');return;}
+  const text=document.getElementById('el-text').value.trim();
+  if(!text){alert('Enter text first.');return;}
+  const voice_id=document.getElementById('el-voice').value;
+  if(!voice_id||voice_id==='— load voices first —'){alert('Load voices first.');return;}
+  const model_id=document.getElementById('el-model').value;
+  const stability=parseFloat(document.getElementById('el-stab').value);
+  const similarity_boost=parseFloat(document.getElementById('el-sim').value);
+  document.getElementById('el-status').classList.add('show');
+  setStatus('el','Starting ElevenLabs conversion…','');
+  try{
+    const r=await fetch(`${API}/elevenlabs/convert`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text,voice_id,voice_name:'ElevenLabs',model_id,stability,similarity_boost,title:'ElevenLabs Chapter',speed:1.0})});
+    const job=await r.json();
+    log('EL convert job: '+job.job_id);
+    pollJob(job.job_id,'el',()=>{});
+  }catch(e){setStatus('el','Error: '+e.message,'err');}
+}
+function elClone(){log('Voice cloning requires ElevenLabs Creator plan. Use /api/v2/elevenlabs/clone endpoint.');}
+
+// ── TEMPLATES ─────────────────────────────────────────────────────────────────
+function buildTemplates(){
+  document.getElementById('tpl-grid').innerHTML=Object.entries(TEMPLATES).map(([name,text])=>`
+    <div class="tpl-card" onclick="loadTemplate('${name}')">
+      <div class="tpl-name">${name}</div>
+      <div class="tpl-preview">${text}</div>
+    </div>`).join('');
+}
+function loadTemplate(name){
+  document.getElementById('editor-text').value=TEMPLATES[name];
+  document.getElementById('editor-title').value=name+' Chapter';
+  showTab('editor',document.querySelector('.tab-btn'));
+  log('Template loaded: '+name);
+}
+
+// ── STATS / LOG ───────────────────────────────────────────────────────────────
+async function loadStats(){
+  try{
+    const [hr,sr]=await Promise.all([fetch(`${API}/health`),fetch(`${API}/stats`)]);
+    const h=await hr.json();const s=await sr.json();
+    document.getElementById('s-jobs').textContent=s.total_jobs;
+    document.getElementById('s-done').textContent=s.jobs_done;
+    document.getElementById('s-running').textContent=s.jobs_running;
+    document.getElementById('s-files').textContent=s.total_mp3_files;
+    document.getElementById('s-voices').textContent=h.voices_loaded;
+    document.getElementById('s-uptime').textContent=s.uptime_seconds;
+  }catch(e){log('Stats error: '+e.message);}
+}
+
+// ── FILE UPLOAD ───────────────────────────────────────────────────────────────
+function triggerFileUpload(){document.getElementById('global-file-input').click();}
+function globalFileSelected(input){
+  const f=input.files[0];if(!f)return;
+  uploadedPdfBlob=f;uploadedPdfName=f.name;
+  document.getElementById('sb-file').textContent=f.name.length>30?f.name.slice(0,28)+'…':f.name;
+  log('File loaded: '+f.name);
+}
+
+// ── POLL JOB ──────────────────────────────────────────────────────────────────
+async function pollJob(jobId,ctx,onDone){
+  const poll=async()=>{
+    try{
+      const r=await fetch(`${API}/jobs/${jobId}`);const job=await r.json();
+      if(job.status==='running'){setStatus(ctx,'Converting… please wait','');setTimeout(poll,2500);}
+      else if(job.status==='done'){
+        document.getElementById(ctx+'-spin').style.display='none';
+        setStatus(ctx,'✓ Done — '+job.files.length+' file(s) ready','ok');
+        const audioEl=document.getElementById(ctx+'-audio');
+        const audioWrap=document.getElementById(ctx+'-audio-wrap');
+        const dlRow=document.getElementById(ctx+'-dl');
+        if(audioEl&&audioWrap&&dlRow){
+          audioEl.src=job.files[0];audioWrap.classList.add('show');audioEl.play();
+          dlRow.innerHTML=job.files.map((f,i)=>`<a href="${f}" download class="btn btn-ghost btn-sm">⬇ Download ${i+1}</a>`).join('');
+        }
+        log('Job done: '+jobId);if(onDone)onDone();
+      }else{
+        setStatus(ctx,'Failed: '+(job.error||'unknown'),'err');
+        log('Job failed: '+jobId);if(onDone)onDone();
+      }
+    }catch(e){setStatus(ctx,'Poll error: '+e.message,'err');}
+  };poll();
+}
+function setStatus(ctx,msg,type){
+  const el=document.getElementById(ctx+'-status-txt');
+  if(!el)return;
+  el.textContent=msg;
+  el.className=type==='ok'?'s-ok':type==='err'?'s-err':'s-txt';
+}
+
+// ── THEME ─────────────────────────────────────────────────────────────────────
+let lightMode=false;
+function toggleTheme(){
+  lightMode=!lightMode;
+  const root=document.documentElement;
+  if(lightMode){root.style.setProperty('--bg','#f0f0f8');root.style.setProperty('--surface','#ffffff');root.style.setProperty('--surface2','#e8e4f0');root.style.setProperty('--text','#1a1630');root.style.setProperty('--muted','#6a5c8a');document.getElementById('theme-btn').textContent='🌙 Dark Mode';}
+  else{root.style.setProperty('--bg','#0e0b16');root.style.setProperty('--surface','#16131f');root.style.setProperty('--surface2','#1e1a2e');root.style.setProperty('--text','#e2e0f0');root.style.setProperty('--muted','#9d98b8');document.getElementById('theme-btn').textContent='☀ Light Mode';}
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+checkHealth();setInterval(checkHealth,30000);
+loadAllVoices();
+buildLangList();
+buildKidsStories();
+buildKidsLangSelect();
+buildTemplates();
+log('FaMTNarriAI Studio loaded');
+</script>
+</body>
+</html>

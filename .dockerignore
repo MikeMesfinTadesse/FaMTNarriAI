@@ -1,0 +1,52 @@
+# ═══════════════════════════════════════════════════════════════
+# .dockerignore — files Docker should NOT copy into the container
+# Same idea as .gitignore but for Docker builds.
+# Smaller build context = faster builds.
+# ═══════════════════════════════════════════════════════════════
+
+# Virtual environments
+venv/
+env/
+.venv/
+narraai-env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Tests (not needed in the container)
+tests/
+
+# GUI code (Docker runs CLI only — no screen)
+gui/
+
+# Output audio files (too large, mounted as volume instead)
+output/
+NarraAI_Output/
+*.mp3
+*.wav
+*.m3u
+
+# Development files
+.git/
+.github/
+docs/
+scripts/
+*.md
+!README.md
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Environment and secrets
+.env
+.env.*
+secrets.json
+
+# Logs
+*.log

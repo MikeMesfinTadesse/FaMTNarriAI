@@ -1,0 +1,53 @@
+# ═══════════════════════════════════════════════════════════════
+# FaMTNarriAI — Dockerfile.api  (production-ready)
+# Runs the FastAPI backend + serves the Studio UI at /
+# ═══════════════════════════════════════════════════════════════
+
+# ── Stage 1: Builder ─────────────────────────────────────────
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+
+RUN apt-get update && apt-get install -y gcc && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user \
+    fastapi>=0.100.0 \
+    "uvicorn[standard]>=0.23.0" \
+    python-multipart>=0.0.6 \
+    httpx>=0.24.0 \
+    edge-tts>=6.1.9 \
+    pymupdf>=1.23.0 \
+    requests \
+    aiofiles
+
+# ── Stage 2: Final ───────────────────────────────────────────
+FROM python:3.11-slim
+
+LABEL maintainer="FaMTNarriAI"
+LABEL description="FaMTNarriAI Audiobook Studio — FastAPI + Studio UI"
+LABEL version="2.0.0"
+
+WORKDIR /app
+
+# Copy installed packages from builder
+COPY --from=builder /root/.local /root/.local
+
+# Copy application code
+COPY core/    ./core/
+COPY api/     ./api/
+COPY static/  ./static/
+COPY main.py  .
+
+# Output directory for generated MP3s
+RUN mkdir -p /app/output
+
+# Environment
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PATH=/root/.local/bin:$PATH
+
+EXPOSE 8000
+
+# Production: no --reload flag
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,0 +1,38 @@
+# ═══════════════════════════════════════════════════════════════
+# FaMTNarriAI — Docker Compose
+# Start:   docker compose up --build
+# Stop:    docker compose down
+# Logs:    docker compose logs -f api
+# ═══════════════════════════════════════════════════════════════
+
+services:
+
+  # ── FastAPI Backend ─────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: famtnarriai_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./output:/app/output
+      - ./core:/app/core
+      - ./api:/app/api
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
+      - API_KEY=${API_KEY:-dev-key-123}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - famtnarriai_net
+
+networks:
+  famtnarriai_net:
+    driver: bridge
