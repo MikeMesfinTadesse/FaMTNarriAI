@@ -67,8 +67,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi import BackgroundTasks, Request, Depends
+<<<<<<< HEAD
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+=======
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+>>>>>>> ac6675ad20c8d69ad1a1a079e0eb03aeace74b5b
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -132,11 +136,14 @@ app.add_middleware(
     allow_headers  = ["*"],
 )
 
+<<<<<<< HEAD
 # Mount static files (Studio UI assets)
 _static_dir = Path(__file__).parent.parent / "static"
 if _static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
 
+=======
+>>>>>>> ac6675ad20c8d69ad1a1a079e0eb03aeace74b5b
 
 # ── Authentication (optional API key) ────────────────────────────────────────
 # WHY API KEYS?
@@ -296,10 +303,14 @@ def _now_iso() -> str:
 
 @app.get("/", include_in_schema=False)
 async def root():
+<<<<<<< HEAD
     """Serve the FaMTNarriAI Studio UI."""
     static_path = Path(__file__).parent.parent / "static" / "index.html"
     if static_path.exists():
         return HTMLResponse(content=static_path.read_text(encoding="utf-8"))
+=======
+    """Redirect root to the interactive API docs."""
+>>>>>>> ac6675ad20c8d69ad1a1a079e0eb03aeace74b5b
     return RedirectResponse(url="/docs")
 
 

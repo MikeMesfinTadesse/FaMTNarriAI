@@ -34,7 +34,11 @@ config.local.py
 # Generated files don't belong in version control
 output/
 NarraAI_Output/
+<<<<<<< HEAD
 *.mp3s
+=======
+*.mp3
+>>>>>>> ac6675ad20c8d69ad1a1a079e0eb03aeace74b5b
 *.wav
 *.ogg
 *.m3u
