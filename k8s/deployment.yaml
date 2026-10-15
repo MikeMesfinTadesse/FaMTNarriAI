@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: famtnarriai
+  labels:
+    app: famtnarriai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: famtnarriai
+  template:
+    metadata:
+      labels:
+        app: famtnarriai
+    spec:
+      containers:
+      - name: famtnarriai
+        image: ghcr.io/mikemesfintadesse/famtnarriai:latest
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
