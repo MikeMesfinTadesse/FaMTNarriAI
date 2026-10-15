@@ -76,3 +76,7 @@ narraai_stats.csv   # analytics data — too large for git
 # ── Docker ──────────────────────────────────────────────────────
 # Keep Dockerfile but ignore local docker volumes
 docker-data/
+.terraform/
+terraform/.terraform/
+*.tfstate
+*.tfstate.backup
