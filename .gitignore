@@ -80,3 +80,7 @@ docker-data/
 terraform/.terraform/
 *.tfstate
 *.tfstate.backup
+*.pdf
+*.zip
+windows-amd64/
+main
