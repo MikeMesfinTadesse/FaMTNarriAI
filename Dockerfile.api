@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir --user \
     "uvicorn[standard]>=0.23.0" \
     python-multipart>=0.0.6 \
     httpx>=0.24.0 \
-    edge-tts>=6.1.9 \
+    "edge-tts>=7.3.1" \
     pymupdf>=1.23.0 \
     requests \
     aiofiles

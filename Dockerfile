@@ -33,7 +33,7 @@ RUN apt-get update && apt-get install -y \
 # If requirements.txt hasn't changed, pip install is skipped on rebuild.
 COPY requirements.txt .
 RUN pip install --no-cache-dir --user \
-    edge-tts \
+    "edge-tts>=7.3.1" \
     pymupdf \
     deep-translator
 

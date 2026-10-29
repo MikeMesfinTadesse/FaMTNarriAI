@@ -5,24 +5,15 @@ Entry point. Run this file to launch the desktop GUI.
   python main.py          # GUI mode
   python main.py --cli    # CLI / batch mode
 """
-<<<<<<< HEAD
-#import ssl_fix  # Must be first!import os
-import certifi
+
 import os
-import argparse  # <-- Add this
+import sys
+import argparse
+import certifi
 
 # Fix Windows SSL certificate corruption issue
 os.environ['SSL_CERT_FILE'] = certifi.where()
 os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
-
-import sys
-from gui.app import NarraApp
-# etc.
-=======
-
-import sys
-import argparse
->>>>>>> ac6675ad20c8d69ad1a1a079e0eb03aeace74b5b
 
 
 def launch_gui():
