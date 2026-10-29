@@ -306,11 +306,11 @@ class NarraApp(ctk.CTk):
         self._pdf_path:      Optional[str] = None
         self._doc_title:     str           = "Untitled"
         self._chapters:      list[dict]    = []
-<<<<<<< HEAD
+
         self._output_dir = r"D:\NarraAI_Output"
-=======
+
         self._output_dir:    str           = str(Path.home() / "NarraAI_Output")
->>>>>>> ac6675ad20c8d69ad1a1a079e0eb03aeace74b5b
+
         self._is_converting: bool          = False
         self._char_rows:     list[dict]    = []
         self._lang_pdf_path: Optional[str] = None
@@ -952,7 +952,7 @@ class NarraApp(ctk.CTk):
     # ════════════════════════════════════════════════════════════════════════
 
     def _el_api_key_value(self) -> str:
-        key = self._el_key_entry.get().strip()
+        key = self._el_key_entry.get().strip().strip("\"'").strip()
         if key:
             self._el_api_key = key
         return self._el_api_key

@@ -147,6 +147,30 @@ def _clean_for_tts(text: str) -> str:
 #  ElevenLabs API helpers (SDK + raw-HTTP fallback)
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _clean_key(api_key: str) -> str:
+    """Trim spaces, quotes, newlines and common pasted prefixes from a key."""
+    k = (api_key or "").strip().strip("\"'").strip()
+    for prefix in ("xi-api-key:", "Bearer ", "bearer "):
+        if k.startswith(prefix):
+            k = k[len(prefix):].strip()
+    return k
+
+
+def _check(resp) -> None:
+    """Like raise_for_status, but include ElevenLabs' own error message."""
+    if resp.ok:
+        return
+    try:
+        d = resp.json().get("detail", {})
+        msg = d.get("message") if isinstance(d, dict) else str(d)
+    except Exception:
+        msg = (resp.text or "")[:300]
+    hint = ""
+    if resp.status_code in (400, 401):
+        hint = " (check API key starts with sk_ and has Text to Speech + Voices Read permissions)"
+    raise RuntimeError(f"ElevenLabs {resp.status_code}: {msg}{hint}")
+
+
 def _get_client(api_key: str):
     """Return an ElevenLabs SDK client, or None if SDK not installed."""
     if not ELEVENLABS_SDK:
@@ -188,12 +212,12 @@ def fetch_voices(api_key: str) -> list[dict]:
         )
     resp = _requests.get(
         f"{ELEVENLABS_API_BASE}/voices",
-        headers={"xi-api-key": api_key},
+        headers={"xi-api-key": _clean_key(api_key)},
         timeout=15,
     )
     if resp.status_code == 401:
         raise RuntimeError("Invalid ElevenLabs API key.")
-    resp.raise_for_status()
+    _check(resp)
     data = resp.json()
     return [
         {
@@ -236,12 +260,12 @@ def clone_voice(api_key: str, name: str, file_paths: list[str],
     data = {"name": name, "description": description}
     resp = _requests.post(
         f"{ELEVENLABS_API_BASE}/voices/add",
-        headers={"xi-api-key": api_key},
+        headers={"xi-api-key": _clean_key(api_key)},
         data=data,
         files=files_payload,
         timeout=120,
     )
-    resp.raise_for_status()
+    _check(resp)
     return resp.json()
 
 
@@ -275,7 +299,7 @@ def _synthesise_chunk(api_key: str, text: str, voice_id: str,
     resp = _requests.post(
         f"{ELEVENLABS_API_BASE}/text-to-speech/{voice_id}",
         headers={
-            "xi-api-key":   api_key,
+            "xi-api-key":   _clean_key(api_key),
             "Content-Type": "application/json",
             "Accept":       "audio/mpeg",
         },
@@ -291,7 +315,7 @@ def _synthesise_chunk(api_key: str, text: str, voice_id: str,
     )
     if resp.status_code == 401:
         raise RuntimeError("Invalid ElevenLabs API key.")
-    resp.raise_for_status()
+    _check(resp)
     return resp.content
 
 
@@ -326,7 +350,7 @@ class ElevenLabsConverter:
         on_status:        Optional[Callable[[str, str], None]]      = None,
         max_retries:      int                                       = 3,
     ):
-        self.api_key          = api_key.strip()
+        self.api_key          = _clean_key(api_key)
         self.voice_id         = voice_id
         self.voice_name       = voice_name
         self.model_id         = model_id
