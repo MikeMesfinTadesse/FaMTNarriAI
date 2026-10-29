@@ -762,12 +762,29 @@ async def list_jobs(_key: str = Depends(check_rate_limit)):
 #  If no key is set, they return a clear 503 with setup instructions.
 # ══════════════════════════════════════════════════════════════════════════════
 
+import contextvars
+_el_key_ctx: contextvars.ContextVar = contextvars.ContextVar("el_key", default="")
+
+
+@app.middleware("http")
+async def _capture_el_key(request: Request, call_next):
+    """Remember the X-EL-Key header sent by the web UI for this request."""
+    raw = request.headers.get("X-EL-Key", "")
+    token = _el_key_ctx.set(raw.strip().strip("\"'").strip())
+    try:
+        return await call_next(request)
+    finally:
+        _el_key_ctx.reset(token)
+
+
 def _get_el_key() -> str:
     """
-    Return ElevenLabs API key from environment.
-    Raises HTTP 503 with setup instructions if not configured.
+    Return the ElevenLabs API key.
+    Order: X-EL-Key header from the web UI first, then the
+    ELEVENLABS_API_KEY environment variable.
+    Raises HTTP 503 with setup instructions if neither is set.
     """
-    key = os.getenv("ELEVENLABS_API_KEY", "").strip()
+    key = _el_key_ctx.get() or os.getenv("ELEVENLABS_API_KEY", "").strip()
     if not key:
         raise HTTPException(
             status_code = 503,

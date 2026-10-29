@@ -865,7 +865,7 @@ async function elPreview(){
   const similarity_boost=parseFloat(document.getElementById('el-sim').value);
   if(!voice_id||voice_id==='— load voices first —'){alert('Load voices first.');return;}
   try{
-    const r=await fetch(`${API}/elevenlabs/preview`,{method:'POST',headers:{'Content-Type':'application/json'},
+    const r=await fetch(`${API}/elevenlabs/preview`,{method:'POST',headers:{'Content-Type':'application/json','X-EL-Key':key},
       body:JSON.stringify({text,voice_id,voice_name:'ElevenLabs',model_id,stability,similarity_boost,title:'Preview',speed:1.0})});
     if(r.ok){const blob=await r.blob();const audio=document.getElementById('el-preview-audio');audio.src=URL.createObjectURL(blob);document.getElementById('el-preview-wrap').classList.add('show');audio.play();log('EL preview playing');}
     else{const d=await r.json();log('EL preview error: '+(d.detail?.detail||d.detail||'unknown'));}
@@ -884,7 +884,7 @@ async function elConvert(){
   document.getElementById('el-status').classList.add('show');
   setStatus('el','Starting ElevenLabs conversion…','');
   try{
-    const r=await fetch(`${API}/elevenlabs/convert`,{method:'POST',headers:{'Content-Type':'application/json'},
+    const r=await fetch(`${API}/elevenlabs/convert`,{method:'POST',headers:{'Content-Type':'application/json','X-EL-Key':key},
       body:JSON.stringify({text,voice_id,voice_name:'ElevenLabs',model_id,stability,similarity_boost,title:'ElevenLabs Chapter',speed:1.0})});
     const job=await r.json();
     log('EL convert job: '+job.job_id);
