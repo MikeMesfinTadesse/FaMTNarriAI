@@ -1,0 +1,20 @@
+- name: FaMTNarriAI base setup
+  hosts: local:web
+  become: true
+  tasks:
+    - name: Install tools
+      apt:
+        name: [git, curl, python3-pip]
+        state: present
+        update_cache: true
+
+    - name: Create project folder
+      file:
+        path: /opt/famtnarriai
+        state: directory
+        mode: "0755"
+
+    - name: Write a version file
+      copy:
+        dest: /opt/famtnarriai/VERSION
+        content: "famtnarriai v1\n"

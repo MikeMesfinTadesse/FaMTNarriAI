@@ -80,3 +80,4 @@ terraform/.terraform/
 *.zip
 windows-amd64/
 main
+ansible/target/authorized_keys
