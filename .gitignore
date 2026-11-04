@@ -81,3 +81,4 @@ terraform/.terraform/
 windows-amd64/
 main
 ansible/target/authorized_keys
+ansible/target/authorized_keys
