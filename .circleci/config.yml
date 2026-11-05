@@ -1,0 +1,21 @@
+version: 2.1
+
+jobs:
+  test:
+    docker:
+      - image: cimg/python:3.12
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: pip install --quiet -r requirements.txt
+      - run:
+          name: Run tests
+          command: pytest tests --junitxml=test-results/junit.xml
+      - store_test_results:
+          path: test-results
+
+workflows:
+  main:
+    jobs:
+      - test
