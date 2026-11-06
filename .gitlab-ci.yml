@@ -1,4 +1,18 @@
+stages:
+  - test
+
 test:
+  stage: test
   image: python:3.12
+  cache:
+    paths:
+      - .cache/pip
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   script:
-    - python --version
+    - pip install --quiet -r requirements.txt
+    - pytest tests --junitxml=junit.xml --cov=api --cov=core --cov-report=term
+  artifacts:
+    when: always
+    reports:
+      junit: junit.xml
