@@ -1,6 +1,6 @@
 replicaCount: 2
 image:
-  repository: your-dockerhub-username/famtnarriai
+  repository: mikemesfintadesse/famtnarriai
   tag: latest
   pullPolicy: IfNotPresent
 service:
