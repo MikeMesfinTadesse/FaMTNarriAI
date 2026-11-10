@@ -1,0 +1,9 @@
+replicaCount: 2
+image:
+  repository: your-dockerhub-username/famtnarriai
+  tag: latest
+  pullPolicy: IfNotPresent
+service:
+  type: NodePort
+  port: 80
+  targetPort: 8000
