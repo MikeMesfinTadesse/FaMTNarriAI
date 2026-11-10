@@ -332,11 +332,13 @@ code{font-family:monospace;background:var(--surface2);padding:1px 5px;border-rad
         </div>
         <div id="lang-file-info" style="font-size:.78rem;color:var(--muted);margin-bottom:.6rem;">No file uploaded — or type/paste below</div>
         <div style="margin-bottom:.6rem;">
-          <button class="btn btn-blue btn-sm" onclick="langTranslate()">🌐 Translate Now</button>
-          <span style="font-size:.75rem;color:var(--muted);margin-left:.5rem;">Translate text into selected language before converting</span>
+          <button class="btn btn-blue btn-sm" id="lang-translate-btn" onclick="langTranslate()">Translate Now</button>
+          <button class="btn btn-accent btn-sm" id="lang-undo-btn" style="display:none" onclick="langUndoTranslate()">Restore original</button>
+          <span id="lang-selected" style="font-size:.75rem;color:var(--accent);margin-left:.5rem;"></span>
+          <span style="font-size:.75rem;color:var(--muted);margin-left:.5rem;">Translates the text below into the selected language (left list)</span>
         </div>
         <div class="field" style="margin-bottom:.5rem;">
-          <textarea id="lang-text" rows="5" id="lang-text"></textarea>
+          <textarea id="lang-text" rows="12"></textarea>
         </div>
         <div style="display:flex;gap:.6rem;align-items:center;">
           <input type="text" id="lang-title" value="My Chapter" style="max-width:200px"/>
@@ -708,20 +710,64 @@ async function vtTest(voiceId,btn){
 }
 
 // ── LANGUAGES ─────────────────────────────────────────────────────────────────
+// -- Shared helpers: translate + extract text ---------------------------------
+async function apiTranslateOnce(text, langKey){
+  const r=await fetch(`${API}/translate`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({text:text,target:langKey})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(typeof j.detail==='string'?j.detail:('Translation request failed (HTTP '+r.status+')'));
+  return j.translated;
+}
+// Long text (a whole chapter or book) is sent in batches of up to 40,000 characters.
+async function apiTranslate(text, langKey, onProgress){
+  const MAX=40000;
+  if(text.length<=MAX) return apiTranslateOnce(text,langKey);
+  const batches=[];let cur='';
+  for(const line of text.split('\n')){
+    if(cur.length+line.length+1>MAX && cur){batches.push(cur);cur='';}
+    cur+=(cur?'\n':'')+line;
+  }
+  if(cur) batches.push(cur);
+  const out=[];
+  for(let i=0;i<batches.length;i++){
+    if(onProgress) onProgress(i+1,batches.length);
+    out.push(await apiTranslateOnce(batches[i],langKey));
+  }
+  return out.join('\n');
+}
+async function apiExtract(file){
+  const fd=new FormData();fd.append('file',file);
+  const r=await fetch(`${API}/extract-text`,{method:'POST',body:fd});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(typeof j.detail==='string'?j.detail:('HTTP '+r.status));
+  return j;
+}
+let langOriginalText=null;
+let langShownSample=null;
+
 function buildLangList(){
   const list=document.getElementById('lang-list');
   list.innerHTML=Object.keys(MULTILANG_VOICES).map(l=>`
     <div class="lang-item" onclick="selectLang('${l}',this)">${l}</div>`).join('');
-  selectLang(Object.keys(MULTILANG_VOICES)[0],list.firstChild);
+  selectLang(Object.keys(MULTILANG_VOICES)[0],list.firstElementChild);
 }
 function selectLang(lang,el){
   document.querySelectorAll('.lang-item').forEach(i=>i.classList.remove('active'));
-  if(el)el.classList.add('active');
+  if(el&&el.classList)el.classList.add('active');
   activeLang=lang;
   const voices=MULTILANG_VOICES[lang];
   const sel=document.getElementById('lang-voice');
   sel.innerHTML=voices.map(([id,lbl])=>`<option value="${id}">${lbl}</option>`).join('');
-  if(LANG_SAMPLES[lang]) document.getElementById('lang-text').value=LANG_SAMPLES[lang];
+  // Only show the sample sentence if the box is empty or still holds the
+  // previous sample. Never overwrite text the user typed, pasted or uploaded.
+  const box=document.getElementById('lang-text');
+  const cur=box.value.trim();
+  if(LANG_SAMPLES[lang] && (cur===''||cur===langShownSample)){
+    box.value=LANG_SAMPLES[lang];
+    langShownSample=LANG_SAMPLES[lang].trim();
+  }
+  const lbl=document.getElementById('lang-selected');
+  if(lbl) lbl.textContent='Selected: '+lang;
   log('Language selected: '+lang);
 }
 async function langTestVoice(){
@@ -735,21 +781,52 @@ async function langTestVoice(){
   }catch(e){log('Error: '+e.message);}
 }
 function langUpload(){document.getElementById('lang-file-input').click();}
-function langFileSelected(input){
+async function langFileSelected(input){
   const f=input.files[0];if(!f)return;
-  document.getElementById('lang-file-info').textContent='📄 '+f.name;
-  log('Language file loaded: '+f.name);
+  const info=document.getElementById('lang-file-info');
+  info.textContent='Reading '+f.name+' ...';
+  try{
+    const j=await apiExtract(f);
+    document.getElementById('lang-text').value=j.text;
+    langShownSample=null;langOriginalText=null;
+    document.getElementById('lang-title').value=f.name.replace(/\.[^.]+$/,'');
+    info.textContent='File: '+f.name+' ('+j.words+' words'+(j.pages?', '+j.pages+' pages':'')+') - text loaded below';
+    log('Language file loaded: '+f.name+' ('+j.words+' words)');
+  }catch(e){
+    info.textContent='Could not read '+f.name+': '+e.message;
+    log('Language file error: '+e.message);
+  }
+  input.value='';
 }
 async function langTranslate(){
-  const text=document.getElementById('lang-text').value.trim();
-  if(!text){alert('Enter text first.');return;}
-  const voice=document.getElementById('lang-voice').value;
+  const box=document.getElementById('lang-text');
+  const text=box.value.trim();
+  if(!text){alert('Enter text or upload a file first.');return;}
+  if(!activeLang){alert('Pick a language on the left first.');return;}
+  const btn=document.getElementById('lang-translate-btn');
+  const info=document.getElementById('lang-file-info');
+  if(btn){btn.disabled=true;btn.textContent='Translating...';}
   try{
-    const r=await fetch(`${API}/preview`,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({text:text.slice(0,100),voice,speed:1.0})});
-    if(r.ok)log('Translation preview generated (full translation requires deep-translator on server)');
-  }catch(e){log('Translate error: '+e.message);}
-  log('Note: Install deep-translator on server for full translation support');
+    const translated=await apiTranslate(text,activeLang,(n,t)=>{info.textContent='Translating part '+n+' of '+t+' ...';});
+    langOriginalText=text;
+    box.value=translated;
+    langShownSample=null;
+    const undo=document.getElementById('lang-undo-btn');if(undo)undo.style.display='inline-block';
+    info.textContent='Translated into '+activeLang+' - now click Test or Convert';
+    log('Translated into '+activeLang+' ('+text.length+' characters)');
+  }catch(e){
+    info.textContent='Translation failed: '+e.message;
+    log('Translate error: '+e.message);
+    alert('Translation failed: '+e.message);
+  }
+  if(btn){btn.disabled=false;btn.textContent='Translate Now';}
+}
+function langUndoTranslate(){
+  if(langOriginalText===null)return;
+  document.getElementById('lang-text').value=langOriginalText;
+  langOriginalText=null;
+  document.getElementById('lang-undo-btn').style.display='none';
+  document.getElementById('lang-file-info').textContent='Original text restored';
 }
 async function langConvert(){
   const text=document.getElementById('lang-text').value.trim();
@@ -817,13 +894,40 @@ async function kidsTestVoice(){
   }catch(e){log('Error: '+e.message);}
 }
 function kidsUpload(){document.getElementById('kids-file-input').click();}
-function kidsFileSelected(input){
+async function kidsFileSelected(input){
   const f=input.files[0];if(!f)return;
-  kidsUploadedBlob=f;kidsUploadedName=f.name;
-  document.getElementById('kids-file-info').textContent='📄 '+f.name;
-  log('Kids file loaded: '+f.name);
+  const info=document.getElementById('kids-file-info');
+  info.textContent='Reading '+f.name+' ...';
+  try{
+    const j=await apiExtract(f);
+    document.getElementById('kids-text').value=j.text;
+    document.getElementById('kids-title').value=f.name.replace(/\.[^.]+$/,'');
+    kidsUploadedBlob=f;kidsUploadedName=f.name;
+    info.textContent='File: '+f.name+' ('+j.words+' words) - text loaded below';
+    log('Kids file loaded: '+f.name);
+  }catch(e){
+    info.textContent='Could not read '+f.name+': '+e.message;
+    log('Kids file error: '+e.message);
+  }
+  input.value='';
 }
-async function kidsTranslate(){log('Translation requires deep-translator on server. Showing voice preview instead.');kidsTestVoice();}
+async function kidsTranslate(){
+  const box=document.getElementById('kids-text');
+  const text=box.value.trim();
+  if(!text){alert('No story text to translate.');return;}
+  const lang=document.getElementById('kids-lang').value;
+  const info=document.getElementById('kids-file-info');
+  info.textContent='Translating into '+lang+' ...';
+  try{
+    box.value=await apiTranslate(text,lang,(n,t)=>{info.textContent='Translating part '+n+' of '+t+' ...';});
+    info.textContent='Translated into '+lang+' - now click Test Voice or Convert Story';
+    log('Kids story translated into '+lang);
+  }catch(e){
+    info.textContent='Translation failed: '+e.message;
+    log('Kids translate error: '+e.message);
+    alert('Translation failed: '+e.message);
+  }
+}
 async function kidsConvert(){
   const text=document.getElementById('kids-text').value.trim();
   if(!text){alert('No story text.');return;}
@@ -932,13 +1036,18 @@ function globalFileSelected(input){
 }
 
 // ── POLL JOB ──────────────────────────────────────────────────────────────────
+function spinnerShow(ctx,on){
+  // every tab has one spinner inside its status box; ids differ, so find it by class
+  const sp=document.querySelector('#'+ctx+'-status .spin')||document.getElementById(ctx+'-spin');
+  if(sp) sp.style.display=on?'':'none';
+}
 async function pollJob(jobId,ctx,onDone){
   const poll=async()=>{
     try{
       const r=await fetch(`${API}/jobs/${jobId}`);const job=await r.json();
-      if(job.status==='running'){setStatus(ctx,'Converting… please wait','');setTimeout(poll,2500);}
+      if(job.status==='running'){spinnerShow(ctx,true);setStatus(ctx,'Converting… please wait','');setTimeout(poll,2500);}
       else if(job.status==='done'){
-        document.getElementById(ctx+'-spin').style.display='none';
+        spinnerShow(ctx,false);
         setStatus(ctx,'✓ Done — '+job.files.length+' file(s) ready','ok');
         const audioEl=document.getElementById(ctx+'-audio');
         const audioWrap=document.getElementById(ctx+'-audio-wrap');
@@ -949,10 +1058,10 @@ async function pollJob(jobId,ctx,onDone){
         }
         log('Job done: '+jobId);if(onDone)onDone();
       }else{
-        setStatus(ctx,'Failed: '+(job.error||'unknown'),'err');
+        spinnerShow(ctx,false);setStatus(ctx,'Failed: '+(job.error||'unknown'),'err');
         log('Job failed: '+jobId);if(onDone)onDone();
       }
-    }catch(e){setStatus(ctx,'Poll error: '+e.message,'err');}
+    }catch(e){spinnerShow(ctx,false);setStatus(ctx,'Poll error: '+e.message,'err');}
   };poll();
 }
 function setStatus(ctx,msg,type){

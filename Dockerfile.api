@@ -3,26 +3,31 @@
 # Runs the FastAPI backend + serves the Studio UI at /
 # ═══════════════════════════════════════════════════════════════
 
+# Base image. Override if Docker Hub is blocked on your network:
+#   docker build --build-arg PYTHON_IMAGE=mirror.gcr.io/library/python:3.11-slim ...
+ARG PYTHON_IMAGE=python:3.11-slim
+
 # ── Stage 1: Builder ─────────────────────────────────────────
-FROM python:3.11-slim AS builder
+FROM ${PYTHON_IMAGE} AS builder
 
 WORKDIR /build
 
 RUN apt-get update && apt-get install -y gcc && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir --user \
-    fastapi>=0.100.0 \
+RUN pip install --no-cache-dir --user --retries 10 --timeout 120 \
+    "fastapi>=0.100.0" \
     "uvicorn[standard]>=0.23.0" \
-    python-multipart>=0.0.6 \
-    httpx>=0.24.0 \
+    "python-multipart>=0.0.6" \
+    "httpx>=0.24.0" \
     "edge-tts>=7.3.1" \
-    pymupdf>=1.23.0 \
+    "pymupdf>=1.23.0" \
+    "deep-translator>=1.11.4" \
     requests \
     aiofiles
 
 # ── Stage 2: Final ───────────────────────────────────────────
-FROM python:3.11-slim
+FROM ${PYTHON_IMAGE}
 
 LABEL maintainer="FaMTNarriAI"
 LABEL description="FaMTNarriAI Audiobook Studio — FastAPI + Studio UI"

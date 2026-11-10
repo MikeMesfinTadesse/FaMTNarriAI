@@ -646,6 +646,166 @@ async def convert_pdf(
     )
 
 
+# ============================================================================
+# LANGUAGES: translate text + extract text from an uploaded file
+# ============================================================================
+
+LANG_NAME_TO_CODE = {
+    "english": "en", "arabic": "ar", "japanese": "ja", "chinese": "zh-CN",
+    "french": "fr", "german": "de", "spanish": "es", "russian": "ru",
+    "korean": "ko", "hindi": "hi", "turkish": "tr", "slovak": "sk",
+    "swahili": "sw", "amharic": "am", "filipino": "tl", "tigrinya": "ti",
+}
+
+
+class TranslateRequest(BaseModel):
+    text:   str = Field(..., min_length=1, max_length=60000)
+    target: str = Field(..., description="Language name (e.g. 'French') or code (e.g. 'fr')")
+
+
+def _target_code(target: str) -> str:
+    """Turn 'Arabic', '<flag> Arabic' or 'ar' into a translator language code."""
+    import re as _re
+    name = _re.sub(r"[^A-Za-z\-]+", " ", target).strip()
+    for word in reversed(name.split()):
+        if word.lower() in LANG_NAME_TO_CODE:
+            return LANG_NAME_TO_CODE[word.lower()]
+    if 2 <= len(name) <= 6 and " " not in name:
+        return name
+    raise HTTPException(status_code=400, detail=f"Unknown target language: {target!r}")
+
+
+def _split_for_translation(text: str, limit: int = 4000) -> list:
+    """Split text into pieces under `limit` chars, on line/sentence edges."""
+    units = []
+    for line in text.split("\n"):
+        if len(line) <= limit:
+            units.append(line)
+        else:
+            buf = ""
+            for sent in line.replace("? ", "?|").replace("! ", "!|").replace(". ", ".|").split("|"):
+                while len(sent) > limit:
+                    if buf:
+                        units.append(buf)
+                        buf = ""
+                    units.append(sent[:limit])
+                    sent = sent[limit:]
+                if len(buf) + len(sent) + 1 > limit:
+                    units.append(buf)
+                    buf = sent
+                else:
+                    buf = (buf + " " + sent) if buf else sent
+            if buf:
+                units.append(buf)
+    pieces, cur = [], ""
+    for u in units:
+        if len(cur) + len(u) + 1 > limit and cur:
+            pieces.append(cur)
+            cur = u
+        else:
+            cur = (cur + "\n" + u) if cur else u
+    if cur:
+        pieces.append(cur)
+    return pieces
+
+
+def _translate_blocking(text: str, code: str) -> str:
+    """
+    Translate in pieces. Google allows only ~5 requests per second, so we
+    pause between pieces and retry with a growing wait if Google says
+    "too many requests".
+    """
+    import time as _time
+    from deep_translator import GoogleTranslator
+    translator = GoogleTranslator(source="auto", target=code)
+    out = []
+    pieces = _split_for_translation(text)
+    for n, piece in enumerate(pieces):
+        if not piece.strip():
+            out.append(piece)
+            continue
+        if n:
+            _time.sleep(0.4)                      # stay under 5 requests/second
+        for attempt in range(5):
+            try:
+                out.append(translator.translate(piece) or "")
+                break
+            except Exception as exc:
+                msg = str(exc).lower()
+                busy = ("too many requests" in msg or "429" in msg)
+                blocked = ("/sorry/" in msg or "wrong_version_number" in msg
+                           or "max retries exceeded" in msg or "connection" in msg)
+                if blocked:
+                    raise RuntimeError(
+                        "Google Translate could not be reached from the server "
+                        "(network problem or a temporary block after too many requests). "
+                        "Wait an hour, or run the app from a different network, then try again."
+                    )
+                if busy and attempt < 4:
+                    _time.sleep(2 * (attempt + 1))   # wait 2s, 4s, 6s, 8s
+                    continue
+                raise
+    return "\n".join(out)
+
+
+@app.post(f"{API_PREFIX}/translate", tags=["Languages"])
+async def translate_text(req: TranslateRequest, _key: str = Depends(check_rate_limit)):
+    """Translate text into the target language (uses deep-translator / Google)."""
+    _stats["requests"] += 1
+    code = _target_code(req.target)
+    try:
+        import deep_translator  # noqa: F401
+    except ImportError:
+        raise HTTPException(
+            status_code=503,
+            detail="Translation is not installed on the server. Install: pip install deep-translator",
+        )
+    try:
+        translated = await asyncio.to_thread(_translate_blocking, req.text, code)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Translation failed: {exc}")
+    return {"translated": translated, "target": code, "characters": len(req.text)}
+
+
+@app.post(f"{API_PREFIX}/extract-text", tags=["Languages"])
+async def extract_text(
+    file: UploadFile = File(..., description="PDF or TXT file"),
+    _key: str = Depends(check_rate_limit),
+):
+    """Read a PDF or TXT file and return its clean text (no audio is made)."""
+    _stats["requests"] += 1
+    filename = file.filename or "upload"
+    suffix = Path(filename).suffix.lower()
+    if suffix not in (".pdf", ".txt"):
+        raise HTTPException(status_code=400, detail=f"Got '{suffix}'. Only .pdf and .txt are supported.")
+    content = await file.read()
+    if len(content) > 50 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Maximum file size is 50MB.")
+
+    def _work() -> dict:
+        tmp = OUTPUT_DIR / f"extract_{uuid.uuid4().hex}{suffix}"
+        tmp.write_bytes(content)
+        try:
+            cleaner = TextCleaner()
+            pages = None
+            if suffix == ".pdf":
+                ex = PDFExtractor(str(tmp))
+                pages = ex.page_count()
+                raw = ex.extract_raw()
+            else:
+                raw = tmp.read_text(encoding="utf-8", errors="replace")
+            return {"text": cleaner.clean(raw), "pages": pages}
+        finally:
+            tmp.unlink(missing_ok=True)
+
+    try:
+        res = await asyncio.to_thread(_work)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Could not read file: {exc}")
+    words = len(res["text"].split())
+    return {"filename": filename, "text": res["text"], "pages": res["pages"], "words": words}
+
+
 @app.get(f"{API_PREFIX}/jobs/{{job_id}}", response_model=JobStatus, tags=["Jobs"])
 async def get_job(job_id: str, _key: str = Depends(check_rate_limit)):
     """

@@ -291,16 +291,26 @@ def _safe_str(s: str, max_len: int = 40) -> str:
 
 
 def _run_async(coro):
-    """Run a coroutine safely whether or not an event loop is already running."""
+    """
+    Run a coroutine to completion, whether or not an event loop is
+    already running in this thread (e.g. inside FastAPI).
+
+    Real errors from the coroutine are raised as they are. They are NOT
+    swallowed (the old code caught RuntimeError and retried, which hid the
+    true error behind "asyncio.run() cannot be called from a running
+    event loop").
+    """
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                return pool.submit(asyncio.run, coro).result()
-        return loop.run_until_complete(coro)
+        asyncio.get_running_loop()
     except RuntimeError:
+        # No loop running in this thread: simple case.
         return asyncio.run(coro)
+
+    # A loop IS running here: run the coroutine in a worker thread
+    # that has its own fresh event loop.
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(asyncio.run, coro).result()
 
 
 # ══════════════════════════════════════════════════════════════════════════════

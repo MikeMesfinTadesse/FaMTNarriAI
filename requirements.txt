@@ -17,8 +17,8 @@ pymupdf>=1.23.0
 # -- Core: Desktop GUI --
 customtkinter>=5.2.2
 
-# -- Optional: Translation --
-# deep-translator>=1.11.4
+# -- Translation (Languages / Kids tabs) --
+deep-translator>=1.11.4
 
 # -- Phase 2: REST API --
 fastapi>=0.100.0

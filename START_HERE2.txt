@@ -1,0 +1,193 @@
+====================================================================
+🚀 MASTER STARTUP GUIDE (AFTER PC RESTART)
+====================================================================
+IMPORTANT PRE-STEP: Open Docker Desktop on Windows and wait for it 
+to fully start before doing anything else.
+====================================================================
+
+
+####################################################################
+ SECTION A: KUBERNETES DEPLOYMENTS (Minikube)
+####################################################################
+
+-----------------------------------------
+☸️ PART 1: KUBERNETES IN GIT BASH (Windows Cluster)
+-----------------------------------------
+1. Open "Git Bash" (Right-click on your desktop -> Git Bash Here).
+2. Go to your project folder:
+   cd /d/Main_Hua_Master/AI_Workspace/Personal_Projects/Poject_FAMTNarraai/FaMTNarriAI-dockerv3
+3. Start the Windows Minikube cluster:
+   minikube start
+4. Deploy your app to Windows Kubernetes:
+   kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml
+5. Open your app in the browser:
+   minikube service famtnarriai-service
+   (Press Ctrl+C in Git Bash when you are done looking at the app).
+6. Stop the cluster when finished:
+   minikube stop
+
+-----------------------------------------
+☸️ PART 2: KUBERNETES IN UBUNTU (Main WSL Cluster)
+-----------------------------------------
+1. Open "PowerShell" (Windows Start menu -> type PowerShell).
+2. Enter the Linux environment:
+   wsl
+3. Go to your Linux DevOps folder:
+   cd ~/devops
+4. Start the Linux Minikube cluster:
+   minikube start --driver=docker
+5. Wait 30 seconds, then verify it says "Ready":
+   kubectl get nodes
+6. Go to your Windows project folder from inside Linux:
+   cd /mnt/d/Main_Hua_Master/AI_Workspace/Personal_Projects/Poject_FAMTNarraai/FaMTNarriAI-dockerv3
+7. Deploy your app to Linux Kubernetes:
+   kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml
+8. Verify the Pods are "Running":
+   kubectl get pods
+9. Open your app in the browser:
+   minikube service famtnarriai-service
+   (Press Ctrl+C in Ubuntu when you are done looking at the app).
+10. Stop the cluster when finished:
+    minikube stop
+
+-----------------------------------------
+☸️ PART 3: KUBERNETES IN POWERSHELL (Windows Cluster)
+-----------------------------------------
+1. Open "PowerShell" (Windows Start menu).
+2. Go to your project folder:
+   cd D:\Main_Hua_Master\AI_Workspace\Personal_Projects\Poject_FAMTNarraai\FaMTNarriAI-dockerv3
+3. Start the Windows Minikube cluster:
+   minikube start
+4. Deploy your app to Windows Kubernetes:
+   kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml
+5. Open your app in the browser:
+   minikube service famtnarriai-service
+   (Press Ctrl+C in PowerShell when you are done looking at the app).
+6. Stop the cluster when finished:
+   minikube stop
+
+
+####################################################################
+ SECTION B: DOCKER ONLY DEPLOYMENTS (No Kubernetes)
+####################################################################
+
+-----------------------------------------
+🐳 PART 4: DOCKER IN GIT BASH
+-----------------------------------------
+1. Open "Git Bash" (Right-click on your desktop -> Git Bash Here).
+2. Go to your project folder:
+   cd /d/Main_Hua_Master/AI_Workspace/Personal_Projects/Poject_FAMTNarraai/FaMTNarriAI-dockerv3
+3. Build and start the containers in the background:
+   docker compose up -d --build
+4. Check if they are running:
+   docker ps
+5. Open browser to http://localhost:8000
+6. Stop them when finished:
+   docker compose down
+
+-----------------------------------------
+🐳 PART 5: DOCKER IN UBUNTU (WSL)
+-----------------------------------------
+1. Open "PowerShell" (Windows Start menu -> type PowerShell).
+2. Enter the Linux environment:
+   wsl
+3. Go to your project folder:
+   cd /mnt/d/Main_Hua_Master/AI_Workspace/Personal_Projects/Poject_FAMTNarraai/FaMTNarriAI-dockerv3
+4. Build and start the containers in the background:
+   docker compose up -d --build
+5. Check if they are running:
+   docker ps
+6. Open browser to http://localhost:8000
+7. Stop them when finished:
+   docker compose down
+
+-----------------------------------------
+🐳 PART 6: DOCKER IN POWERSHELL
+-----------------------------------------
+1. Open "PowerShell" (Windows Start menu).
+2. Go to your project folder:
+   cd D:\Main_Hua_Master\AI_Workspace\Personal_Projects\Poject_FAMTNarraai\FaMTNarriAI-dockerv3
+
+--- OPTION A: Normal Start (Code has NOT changed) ---
+3. Just start what is already built:
+   docker compose up -d
+4. Check if they are running:
+   docker ps
+
+--- OPTION B: Rebuild (Code HAS changed) ---
+3. Rebuild the image and start:
+   docker compose up -d --build
+4. Check if they are running:
+   docker ps
+
+--- STOPPING ---
+5. Open browser to http://localhost:8000
+6. Stop them when finished:
+   docker compose down
+
+
+####################################################################
+ SECTION C: ON-PREMISES DEVOPS LEARNING PATH (REAL COMPANY)
+####################################################################
+(No AWS, No Terraform, No Public Cloud. Only Local Servers + Docker)
+
+-----------------------------------------
+🏗️ LESSON 1: ANSIBLE (CONFIGURING LOCAL SERVERS)
+-----------------------------------------
+Ansible is how companies install Docker and set up servers without 
+clicking buttons. It uses SSH to configure 1 or 100 servers at once.
+
+1. Open Ubuntu terminal (PowerShell -> wsl).
+2. Install Ansible:
+   sudo apt update
+   sudo apt install ansible -y
+3. Check version:
+   ansible --version
+4. Create a test inventory file (list of servers):
+   nano inventory.ini
+   (Type: localhost ansible_connection=local)
+5. Create your first playbook (e.g., install_nginx.yml):
+   nano install_nginx.yml
+   (Write YAML steps to install Nginx)
+6. Run the playbook:
+   ansible-playbook -i inventory.ini install_nginx.yml
+
+-----------------------------------------
+🏢 LESSON 2: GITLAB CI/CD + DOCKER (ON-PREMISES)
+-----------------------------------------
+Colleague's Company Setup: They use GitLab CI/CD to build Docker 
+images and deploy them to their own physical servers via SSH.
+
+Key Concepts to Learn:
+1. GitLab Runner: The agent that runs the deployment jobs.
+2. .gitlab-ci.yml: The file that defines the pipeline (build, test, deploy).
+3. Docker on the Server: How GitLab uses SSH to run "docker compose up -d".
+4. GitLab Container Registry: Storing images securely inside GitLab.
+
+-----------------------------------------
+📊 LESSON 3: MONITORING (PROMETHEUS & GRAFANA)
+-----------------------------------------
+Even on-prem servers need monitoring. 
+Prometheus collects metrics (CPU, memory) and Grafana displays them.
+(You can practice this on your local Minikube cluster!)
+
+1. Enable monitoring in Minikube:
+   minikube addons enable metrics-server
+2. Install Prometheus/Grafana via Helm:
+   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+   helm repo update
+   helm install monitoring prometheus-community/kube-prometheus-stack
+3. Open Grafana:
+   minikube service monitoring-grafana
+
+
+====================================================================
+🛑 THE GOLDEN RULE FOR SHUTDOWN
+====================================================================
+Before you turn off your PC, ALWAYS run "minikube stop" in 
+whatever terminal you were using (Git Bash, Ubuntu, or PowerShell). 
+This prevents the corrupted SSH errors we fixed earlier!
+
+If Minikube breaks: 
+Run "minikube delete" and then "minikube start" again.
+====================================================================

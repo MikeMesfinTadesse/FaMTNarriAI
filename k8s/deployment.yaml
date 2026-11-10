@@ -17,6 +17,7 @@ spec:
       containers:
       - name: famtnarriai
         image: ghcr.io/mikemesfintadesse/famtnarriai:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
         resources:
